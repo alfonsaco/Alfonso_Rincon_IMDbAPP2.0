@@ -56,7 +56,7 @@ public class HomeFragment extends Fragment {
         OkHttpClient client = new OkHttpClient.Builder()
                 .addInterceptor(chain -> {
                     Request modifiedRequest = chain.request().newBuilder()
-                            .addHeader("X-RapidAPI-Key", "bdb1444c4amshd033444ce845bbbp12ff63jsn7bf5fe5f9fab")
+                            .addHeader("X-RapidAPI-Key", "e11bbd55cemshd186130e9cc4907p1e01ddjsnd92900b7bab3")
                             .addHeader("X-RapidAPI-Host", "imdb-com.p.rapidapi.com").build();
                     return chain.proceed(modifiedRequest);
                 })

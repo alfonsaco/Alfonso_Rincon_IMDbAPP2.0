@@ -1,5 +1,3 @@
-// package edu.pruebas.rincon_alfonsoimdbapp.adapters;
-
 package edu.pruebas.rincon_alfonsoimdbapp.adapters;
 
 import android.content.Context;
