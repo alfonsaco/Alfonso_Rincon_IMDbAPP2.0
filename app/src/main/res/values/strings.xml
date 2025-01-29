@@ -11,4 +11,10 @@
     <string name="menu_home">Top 10</string>
     <string name="menu_gallery">Favoritas</string>
     <string name="menu_slideshow">Buscar Película</string>
+
+    <!--Facebook-->
+    <string name="facebook_app_id">464689750038312</string>
+    <string name="fb_login_protocol_scheme">fb464689750038312</string>">
+    <string name="facebook_client_token">09e727f80e213a7a97d75e2107feed4e</string>
+    <string name="default_web_client_id"></string>
 </resources>
