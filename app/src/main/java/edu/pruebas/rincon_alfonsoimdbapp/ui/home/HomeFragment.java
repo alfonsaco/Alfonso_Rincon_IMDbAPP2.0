@@ -1,5 +1,3 @@
-// package edu.pruebas.rincon_alfonsoimdbapp.ui.home;
-
 package edu.pruebas.rincon_alfonsoimdbapp.ui.home;
 
 import android.os.Bundle;
@@ -7,6 +5,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,12 +19,11 @@ import java.util.concurrent.TimeUnit;
 
 import edu.pruebas.rincon_alfonsoimdbapp.R;
 import edu.pruebas.rincon_alfonsoimdbapp.adapters.MovieAdapter;
+import edu.pruebas.rincon_alfonsoimdbapp.api.IMDBApiClient;
 import edu.pruebas.rincon_alfonsoimdbapp.api.IMDBApiService;
 import edu.pruebas.rincon_alfonsoimdbapp.models.Movie;
 import edu.pruebas.rincon_alfonsoimdbapp.models.PopularMoviesResponse;
 import edu.pruebas.rincon_alfonsoimdbapp.utils.Constants;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -48,26 +46,8 @@ public class HomeFragment extends Fragment {
         // Configurar RecyclerView
         recyclerView = view.findViewById(R.id.recyclerViewTopMovies);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
-        // Pasar la fuente "IMD" al adaptador
         adapter = new MovieAdapter(getContext(), listaPeliculas, Constants.SOURCE_IMD);
         recyclerView.setAdapter(adapter);
-
-        // Configuración de Retrofit y OkHttp para IMD. Se da la URL y la clase
-        OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(chain -> {
-                    Request modifiedRequest = chain.request().newBuilder()
-                            .addHeader("X-RapidAPI-Key", "e11bbd55cemshd186130e9cc4907p1e01ddjsnd92900b7bab3")
-                            .addHeader("X-RapidAPI-Host", "imdb-com.p.rapidapi.com").build();
-                    return chain.proceed(modifiedRequest);
-                })
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS).build();
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://imdb-com.p.rapidapi.com/").client(client)
-                .addConverterFactory(GsonConverterFactory.create()).build();
-
-        api = retrofit.create(IMDBApiService.class);
 
         // Llamada al método que obtiene los datos de la API
         mostrarPeliculas();
@@ -77,10 +57,10 @@ public class HomeFragment extends Fragment {
 
     // Método que mostrará las películas o series en cuestión
     private void mostrarPeliculas() {
-        Call<PopularMoviesResponse> call = api.top10("US");
+        Call<PopularMoviesResponse> call = IMDBApiClient.getApiService().top10("US");
         call.enqueue(new Callback<PopularMoviesResponse>() {
             @Override
-            public void onResponse(Call<PopularMoviesResponse> call, Response<PopularMoviesResponse> response) {
+            public void onResponse(@NonNull Call<PopularMoviesResponse> call, @NonNull Response<PopularMoviesResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     List<PopularMoviesResponse.Edge> edges = response.body().getData().getTopMeterTitles().getEdges();
                     // Verificamos que haya películas y series, y si es así, se vacía la lista para poder agregar nuevas
@@ -122,19 +102,31 @@ public class HomeFragment extends Fragment {
                                 movie.setRutaPoster("");
                             }
 
+                            // Asignar la fuente
+                            //movie.setSource(Constants.SOURCE_IMD);
+
                             listaPeliculas.add(movie);
                         }
 
                         adapter.notifyDataSetChanged();
                     }
                 } else {
-                    Log.e("HomeFragment", "Ha habido un error al cargar las películas: " + response.message());
+                    if (response.code() == 429) { // Código HTTP para "Too Many Requests"
+                        Log.e("HomeFragment", "Límite de solicitudes alcanzado. Cambiando API Key.");
+                        IMDBApiClient.switchApiKey();
+                        Toast.makeText(getContext(), "Límite de solicitudes alcanzado. Cambiando clave API.", Toast.LENGTH_SHORT).show();
+                        mostrarPeliculas(); // Reintentar con la siguiente clave
+                    } else {
+                        Log.e("HomeFragment", "Error al cargar películas: " + response.message());
+                        Toast.makeText(getContext(), "Error al cargar películas: " + response.message(), Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
 
             @Override
-            public void onFailure(Call<PopularMoviesResponse> call, Throwable t) {
-                Log.e("HomeFragment", "Ha habido un error al llamar la API: " + t.getMessage());
+            public void onFailure(@NonNull Call<PopularMoviesResponse> call, @NonNull Throwable t) {
+                Log.e("HomeFragment", "Error al llamar la API: " + t.getMessage());
+                Toast.makeText(getContext(), "Error al cargar películas: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

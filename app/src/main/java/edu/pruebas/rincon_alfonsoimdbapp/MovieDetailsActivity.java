@@ -19,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import okhttp3.logging.HttpLoggingInterceptor;
 import com.bumptech.glide.Glide;
 
 import java.text.SimpleDateFormat;
@@ -27,11 +28,13 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import edu.pruebas.rincon_alfonsoimdbapp.api.IMDBApiService;
+import edu.pruebas.rincon_alfonsoimdbapp.api.RapidApiKeyManager;
 import edu.pruebas.rincon_alfonsoimdbapp.api.TMDBApiService;
 import edu.pruebas.rincon_alfonsoimdbapp.models.Movie;
 import edu.pruebas.rincon_alfonsoimdbapp.models.MovieDetailsResponse;
 import edu.pruebas.rincon_alfonsoimdbapp.models.MovieOverviewResponse;
 import edu.pruebas.rincon_alfonsoimdbapp.utils.Constants;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import retrofit2.Call;
@@ -66,6 +69,8 @@ public class MovieDetailsActivity extends AppCompatActivity {
     private TMDBApiService tmdbApiService;
     private IMDBApiService imdbApiService;
 
+    private RapidApiKeyManager rapidApiKeyManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,6 +82,8 @@ public class MovieDetailsActivity extends AppCompatActivity {
         txtFechaSalida = findViewById(R.id.txtFechaSalida);
         txtRating = findViewById(R.id.txtRating);
         btnSMS = findViewById(R.id.btnSMS);
+
+        rapidApiKeyManager = RapidApiKeyManager.getInstance();
 
         // Recibimos la película con un Intent
         Intent intent = getIntent();
@@ -183,18 +190,26 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
     // Método para obtener los detalles de la película de la API de IMD
     private void obtenerDetallesIMD(Movie serie) {
-        //  Retrofit y OkHttp para IMD
+        // Retrofit y OkHttp para IMD con RapidApiKeyManager
         OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(chain -> {
-                    Request modifiedRequest = chain.request().newBuilder()
-                            .addHeader("X-RapidAPI-Key", "e11bbd55cemshd186130e9cc4907p1e01ddjsnd92900b7bab3")
-                            .addHeader("X-RapidAPI-Host", "imdb-com.p.rapidapi.com")
-                            .build();
-                    return chain.proceed(modifiedRequest);
+                .addInterceptor(new Interceptor() {
+                    @Override
+                    public okhttp3.Response intercept(Chain chain) throws java.io.IOException {
+                        Request originalRequest = chain.request();
+                        String apiKey = rapidApiKeyManager.getCurrentKey();
+
+                        Request modifiedRequest = originalRequest.newBuilder()
+                                .addHeader("X-RapidAPI-Key", apiKey)
+                                .addHeader("X-RapidAPI-Host", "imdb-com.p.rapidapi.com")
+                                .build();
+                        return chain.proceed(modifiedRequest);
+                    }
                 })
+                .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)) // Para depuración
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .build();
+
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(IMD_BASE_URL)
