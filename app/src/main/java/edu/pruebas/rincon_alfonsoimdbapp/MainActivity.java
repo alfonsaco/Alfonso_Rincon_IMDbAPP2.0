@@ -15,6 +15,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.facebook.login.LoginManager; // Import añadido
 
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -50,23 +51,23 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         // Inicializar GoogleSignInClient
-        GoogleSignInOptions googleSignInOptions=new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        GoogleSignInOptions googleSignInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
-        googleSignInClient=GoogleSignIn.getClient(this, googleSignInOptions);
+        googleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions);
 
         // OBTENER LOS DATOS DEL INTENT
         // Se obtienen las vistas del nav_header. Se utilizará esto para acceder a los elementos
-        View headerView=navigationView.getHeaderView(0);
+        View headerView = navigationView.getHeaderView(0);
 
-        TextView nombreTextView=headerView.findViewById(R.id.nombreEmail);
-        TextView emailTextView=headerView.findViewById(R.id.email);
-        ImageView imageView=headerView.findViewById(R.id.imagenEmail);
+        TextView nombreTextView = headerView.findViewById(R.id.nombreEmail);
+        TextView emailTextView = headerView.findViewById(R.id.email);
+        ImageView imageView = headerView.findViewById(R.id.imagenEmail);
         // Se obtienen los datos de los intents
-        String nombreUsuario=getIntent().getStringExtra("nombre");
-        String emailUsuario=getIntent().getStringExtra("email");
-        String imagenUsuario=getIntent().getStringExtra("imagen");
+        String nombreUsuario = getIntent().getStringExtra("nombre");
+        String emailUsuario = getIntent().getStringExtra("email");
+        String imagenUsuario = getIntent().getStringExtra("imagen");
 
         // Ponemos los datos en los componentes
         nombreTextView.setText(nombreUsuario);
@@ -78,15 +79,19 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Botón de LogOut
-        Button btnLogOut=headerView.findViewById(R.id.btnLogOut);
+        Button btnLogOut = headerView.findViewById(R.id.btnLogOut);
         btnLogOut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Se cierra sesión en Firebase y Google Sign-In
+                // Cerrar sesión en Firebase
                 FirebaseAuth.getInstance().signOut();
 
+                // Cerrar sesión en Google
                 googleSignInClient.signOut().addOnCompleteListener(task -> {
-                    // Redirigimos al usuario al LoginActivity
+                    // Cerrar sesión en Facebook
+                    LoginManager.getInstance().logOut();
+
+                    // Redirigir al usuario al LoginActivity
                     Intent intent = new Intent(MainActivity.this, LoginActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
