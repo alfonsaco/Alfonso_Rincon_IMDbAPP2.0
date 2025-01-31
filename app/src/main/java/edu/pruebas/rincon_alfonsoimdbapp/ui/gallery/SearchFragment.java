@@ -1,5 +1,3 @@
-// package edu.pruebas.rincon_alfonsoimdbapp.ui.gallery;
-
 package edu.pruebas.rincon_alfonsoimdbapp.ui.gallery;
 
 import android.Manifest;

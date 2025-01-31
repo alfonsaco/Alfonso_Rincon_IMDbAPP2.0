@@ -32,7 +32,7 @@ public class FavoritesManager {
         // Verificar si la película ya está en favoritos para evitar duplicados
         if (isFavorite(idUsuario, pelicula.getId())) {
             Log.d("FavoritesManager", "La película ya está en favoritos: " + pelicula.getTitulo());
-            return false; // Retorna false si ya está en favoritos
+            return false;
         }
 
         SQLiteDatabase db = dbHelper.getWritableDatabase();
