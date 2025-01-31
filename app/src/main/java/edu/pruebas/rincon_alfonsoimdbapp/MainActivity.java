@@ -2,29 +2,32 @@ package edu.pruebas.rincon_alfonsoimdbapp;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
+import android.util.Log;
 import android.view.Menu;
-import android.widget.TextView;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-import com.bumptech.glide.Glide;
+import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.facebook.login.LoginManager;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
-import com.facebook.login.LoginManager; // Import añadido
+import com.google.firebase.auth.FirebaseUser;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.appcompat.app.AppCompatActivity;
 
 import edu.pruebas.rincon_alfonsoimdbapp.databinding.ActivityMainBinding;
+import edu.pruebas.rincon_alfonsoimdbapp.models.Usuario;
+import edu.pruebas.rincon_alfonsoimdbapp.models.UsuarioDAO;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,9 +35,16 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private GoogleSignInClient googleSignInClient;
 
+    // Instancia de UsuarioDAO
+    private UsuarioDAO usuarioDAO;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Inicializar UsuarioDAO
+        usuarioDAO = new UsuarioDAO(this);
+        usuarioDAO.open();
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -80,9 +90,12 @@ public class MainActivity extends AppCompatActivity {
 
         // Botón de LogOut
         Button btnLogOut = headerView.findViewById(R.id.btnLogOut);
-        btnLogOut.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        btnLogOut.setOnClickListener(v -> {
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (currentUser != null) {
+                // Actualizar UltimoLogout
+                actualizarUltimoLogout(currentUser.getEmail());
+
                 // Cerrar sesión en Firebase
                 FirebaseAuth.getInstance().signOut();
 
@@ -97,6 +110,8 @@ public class MainActivity extends AppCompatActivity {
                     startActivity(intent);
                     finish();
                 });
+            } else {
+                Log.e("MainActivity", "No hay usuario actual para cerrar sesión");
             }
         });
 
@@ -105,9 +120,56 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navigationView, navController);
     }
 
+    // Método para actualizar UltimoLogout
+    private void actualizarUltimoLogout(String email) {
+        long timestamp = System.currentTimeMillis();
+        Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(email);
+        if (usuario != null) {
+            usuarioDAO.actualizarUltimoLogout(email, timestamp);
+            Log.d("MainActivity", "UltimoLogout actualizado para: " + email);
+        } else {
+            Log.e("MainActivity", "Usuario no encontrado en la base de datos para actualizar UltimoLogout");
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Aplicación entró en primer plano
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            long timestamp = System.currentTimeMillis();
+            Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(currentUser.getEmail());
+            if (usuario != null) {
+                usuarioDAO.actualizarUltimoLogin(currentUser.getEmail(), timestamp);
+                Log.d("MainActivity", "UltimoLogin actualizado para: " + currentUser.getEmail());
+            } else {
+                // Insertar nuevo usuario si no existe
+                Usuario nuevoUsuario = new Usuario(currentUser.getDisplayName(), currentUser.getEmail(), timestamp, 0);
+                usuarioDAO.insertarUsuario(nuevoUsuario);
+                Log.d("MainActivity", "Nuevo usuario insertado: " + currentUser.getEmail());
+            }
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Aplicación pasó a segundo plano
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            long timestamp = System.currentTimeMillis();
+            Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(currentUser.getEmail());
+            if (usuario != null) {
+                usuarioDAO.actualizarUltimoLogout(currentUser.getEmail(), timestamp);
+                Log.d("MainActivity", "UltimoLogout actualizado para: " + currentUser.getEmail());
+            }
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
+        // Inflate the menu; este método agrega elementos al action bar si está presente.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
@@ -117,5 +179,14 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         return NavigationUI.navigateUp(navController, mAppBarConfiguration)
                 || super.onSupportNavigateUp();
+    }
+
+    // Cerrar UsuarioDAO al destruir la actividad
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (usuarioDAO != null) {
+            usuarioDAO.close();
+        }
     }
 }

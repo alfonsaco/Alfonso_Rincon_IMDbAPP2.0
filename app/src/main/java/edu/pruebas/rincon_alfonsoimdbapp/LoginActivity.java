@@ -7,7 +7,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -35,9 +34,10 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 
-import org.json.JSONObject;
-
 import java.util.Arrays;
+
+import edu.pruebas.rincon_alfonsoimdbapp.models.Usuario;
+import edu.pruebas.rincon_alfonsoimdbapp.models.UsuarioDAO;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -52,11 +52,18 @@ public class LoginActivity extends AppCompatActivity {
     // Variable para almacenar las credenciales de Facebook pendientes de vincular
     private AuthCredential pendingFacebookCredential;
 
+    // Instancia de UsuarioDAO
+    private UsuarioDAO usuarioDAO;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_login);
+
+        // Inicializar UsuarioDAO
+        usuarioDAO = new UsuarioDAO(this);
+        usuarioDAO.open();
 
         // Inicializar Firebase Auth
         firebaseAuth = FirebaseAuth.getInstance();
@@ -105,7 +112,7 @@ public class LoginActivity extends AppCompatActivity {
         // Comprobar si el usuario ya está autenticado
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
         if (currentUser != null) {
-            Log.d(TAG, "Usuario ya autenticado: " + currentUser.getEmail());
+            insertarOActualizarUsuario(currentUser);
             irAMainActivity();
         }
 
@@ -117,6 +124,25 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    // Método para insertar o actualizar usuario
+    private void insertarOActualizarUsuario(FirebaseUser usuarioFirebase) {
+        String email = usuarioFirebase.getEmail();
+        String nombre = usuarioFirebase.getDisplayName();
+        long timestamp = System.currentTimeMillis();
+
+        Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(email);
+        if (usuario != null) {
+            // Actualizar UltimoLogin
+            usuarioDAO.actualizarUltimoLogin(email, timestamp);
+            Log.d("LoginActivity", "UltimoLogin actualizado para: " + email);
+        } else {
+            // Insertar nuevo usuario
+            Usuario nuevoUsuario = new Usuario(nombre, email, timestamp, 0);
+            usuarioDAO.insertarUsuario(nuevoUsuario);
+            Log.d("LoginActivity", "Nuevo usuario insertado: " + email);
+        }
+    }
+
     // Manejar el token de acceso de Facebook y autenticar en Firebase
     private void handleFacebookAccessToken(AccessToken token) {
         Log.d(TAG, "Handling Facebook Access Token");
@@ -126,7 +152,11 @@ public class LoginActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         // Autenticación exitosa, redirigir a MainActivity
                         Log.d(TAG, "Firebase authentication successful");
-                        irAMainActivity();
+                        FirebaseUser usuario = firebaseAuth.getCurrentUser();
+                        if (usuario != null) {
+                            insertarOActualizarUsuario(usuario);
+                            irAMainActivity();
+                        }
                     } else {
                         // Si falla, verificar si es por colisión de cuentas
                         if (task.getException() instanceof FirebaseAuthUserCollisionException) {
@@ -212,7 +242,11 @@ public class LoginActivity extends AppCompatActivity {
         firebaseAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
             if (task.isSuccessful()) {
                 Log.d(TAG, "Firebase authentication with Google successful");
-                irAMainActivity();
+                FirebaseUser usuario = firebaseAuth.getCurrentUser();
+                if (usuario != null) {
+                    insertarOActualizarUsuario(usuario);
+                    irAMainActivity();
+                }
             } else {
                 Toast.makeText(LoginActivity.this, "Autenticación fallida con Google", Toast.LENGTH_SHORT).show();
                 Log.e(TAG, "Firebase authentication with Google failed: " + task.getException().getMessage());
@@ -235,6 +269,7 @@ public class LoginActivity extends AppCompatActivity {
                                 if (linkTask.isSuccessful()) {
                                     Log.d(TAG, "Cuenta de Facebook vinculada exitosamente");
                                     Toast.makeText(this, "Cuenta de Facebook vinculada exitosamente", Toast.LENGTH_SHORT).show();
+                                    insertarOActualizarUsuario(user);
                                     irAMainActivity();
                                 } else {
                                     Log.e(TAG, "Error al vincular la cuenta de Facebook: " + linkTask.getException().getMessage());
@@ -256,6 +291,7 @@ public class LoginActivity extends AppCompatActivity {
     private void irAMainActivity() {
         FirebaseUser usuario = firebaseAuth.getCurrentUser();
         if (usuario != null) {
+            insertarOActualizarUsuario(usuario);
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             intent.putExtra("nombre", usuario.getDisplayName());
             intent.putExtra("email", usuario.getEmail());
@@ -264,6 +300,15 @@ public class LoginActivity extends AppCompatActivity {
             finish();
         } else {
             Log.e(TAG, "Usuario es null en irAMainActivity");
+        }
+    }
+
+    // Cerrar UsuarioDAO al destruir la actividad
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (usuarioDAO != null) {
+            usuarioDAO.close();
         }
     }
 }
