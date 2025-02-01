@@ -3,6 +3,8 @@ package edu.pruebas.rincon_alfonsoimdbapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,11 +57,23 @@ public class LoginActivity extends AppCompatActivity {
     // Instancia de UsuarioDAO
     private UsuarioDAO usuarioDAO;
 
+    // Elementos para login y registro vía email y contraseña
+    private Button btnLogin;
+    private Button btnRegistro;
+    private EditText etxtEmail;
+    private EditText etxtPassword;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_login);
+
+        // Inicializar vistas para login/registro por email
+        btnLogin = findViewById(R.id.btnLogin);
+        btnRegistro = findViewById(R.id.btnRegistrar);
+        etxtEmail = findViewById(R.id.etxtEmail);
+        etxtPassword = findViewById(R.id.etxtPassword);
 
         // Inicializar UsuarioDAO
         usuarioDAO = new UsuarioDAO(this);
@@ -70,7 +84,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // Configurar Google Sign-In
         GoogleSignInOptions googleSignInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id)) // Asegúrate de tener este valor en strings.xml
+                .requestIdToken(getString(R.string.default_web_client_id)) // Valor definido en strings.xml
                 .requestEmail()
                 .build();
         googleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions);
@@ -87,27 +101,27 @@ public class LoginActivity extends AppCompatActivity {
         callbackManager = CallbackManager.Factory.create();
         LoginButton loginButton = findViewById(R.id.login_button);
         loginButton.setPermissions(Arrays.asList("email", "public_profile"));
-
-        // Registrar el callback de Facebook
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
                 Log.d(TAG, "Facebook login successful");
                 handleFacebookAccessToken(loginResult.getAccessToken());
             }
-
             @Override
             public void onCancel() {
                 Toast.makeText(LoginActivity.this, "Inicio de sesión cancelado", Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "Facebook login canceled");
             }
-
             @Override
             public void onError(FacebookException error) {
                 Toast.makeText(LoginActivity.this, "Error en el inicio de sesión: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                 Log.e(TAG, "Facebook login error: " + error.getMessage());
             }
         });
+
+        // Configurar los botones para login y registro vía email y contraseña
+        btnLogin.setOnClickListener(v -> loginWithEmailPassword());
+        btnRegistro.setOnClickListener(v -> registerWithEmailPassword());
 
         // Comprobar si el usuario ya está autenticado
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
@@ -124,24 +138,63 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    // Método para insertar o actualizar usuario
+    // Login con email y contraseña
+    private void loginWithEmailPassword() {
+        String email = etxtEmail.getText().toString().trim();
+        String password = etxtPassword.getText().toString().trim();
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Por favor, ingrese email y contraseña", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        firebaseAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser usuario = firebaseAuth.getCurrentUser();
+                        if (usuario != null) {
+                            insertarOActualizarUsuario(usuario);
+                            irAMainActivity();
+                        }
+                    } else {
+                        Toast.makeText(LoginActivity.this, "Error de autenticación: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.e(TAG, "Error de login con email: " + task.getException().getMessage());
+                    }
+                });
+    }
+
+    // Registro con email y contraseña
+    private void registerWithEmailPassword() {
+        String email = etxtEmail.getText().toString().trim();
+        String password = etxtPassword.getText().toString().trim();
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Por favor, ingrese email y contraseña", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        firebaseAuth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser usuario = firebaseAuth.getCurrentUser();
+                        if (usuario != null) {
+                            insertarOActualizarUsuario(usuario);
+                            Toast.makeText(LoginActivity.this, "Registro exitoso", Toast.LENGTH_SHORT).show();
+                            irAMainActivity();
+                        }
+                    } else {
+                        Toast.makeText(LoginActivity.this, "Error de registro: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.e(TAG, "Error de registro con email: " + task.getException().getMessage());
+                    }
+                });
+    }
+
+    // Método para insertar o actualizar usuario (actualmente registra login en la tabla de usuarios)
     private void insertarOActualizarUsuario(FirebaseUser usuarioFirebase) {
         String email = usuarioFirebase.getEmail();
-        String nombre = usuarioFirebase.getDisplayName();
+        String nombre = usuarioFirebase.getDisplayName() != null ? usuarioFirebase.getDisplayName() : "Usuario";
         long timestamp = System.currentTimeMillis();
-
-        Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(email);
-        if (usuario != null) {
-            // Actualizar UltimoLogin
-            usuarioDAO.actualizarUltimoLogin(email, timestamp);
-            Log.d("LoginActivity", "UltimoLogin actualizado para: " + email);
-        } else {
-            // Insertar nuevo usuario
-            Usuario nuevoUsuario = new Usuario(nombre, email, timestamp, 0);
-            usuarioDAO.insertarUsuario(nuevoUsuario);
-            Log.d("LoginActivity", "Nuevo usuario insertado: " + email);
-        }
+        // En este esquema se registra un nuevo evento de login para cada autenticación.
+        usuarioDAO.registrarLogin(nombre, email, timestamp);
+        Log.d("LoginActivity", "Nuevo login registrado para: " + email);
     }
+
 
     // Manejar el token de acceso de Facebook y autenticar en Firebase
     private void handleFacebookAccessToken(AccessToken token) {
@@ -150,28 +203,20 @@ public class LoginActivity extends AppCompatActivity {
         firebaseAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        // Autenticación exitosa, redirigir a MainActivity
-                        Log.d(TAG, "Firebase authentication successful");
+                        Log.d(TAG, "Firebase authentication successful (Facebook)");
                         FirebaseUser usuario = firebaseAuth.getCurrentUser();
                         if (usuario != null) {
                             insertarOActualizarUsuario(usuario);
                             irAMainActivity();
                         }
                     } else {
-                        // Si falla, verificar si es por colisión de cuentas
                         if (task.getException() instanceof FirebaseAuthUserCollisionException) {
                             FirebaseAuthUserCollisionException collisionException = (FirebaseAuthUserCollisionException) task.getException();
                             String email = collisionException.getEmail();
-
                             Log.e(TAG, "FirebaseAuthUserCollisionException: " + collisionException.getMessage());
-
-                            // Almacenar las credenciales de Facebook para vincular después
                             pendingFacebookCredential = credential;
-
-                            // Mostrar diálogo al usuario para vincular cuentas
                             showAccountCollisionDialog(email);
                         } else {
-                            // Otro tipo de error
                             Toast.makeText(LoginActivity.this, "Error de autenticación con Facebook: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                             Log.e(TAG, "Firebase Authentication Failed: " + task.getException().getMessage());
                         }
@@ -179,35 +224,29 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    // Mostrar un diálogo para manejar la colisión de cuentas
+    // Mostrar diálogo para colisión de cuentas
     private void showAccountCollisionDialog(String email) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Cuenta existente");
         builder.setMessage("Ya existe una cuenta con el correo " + email + ". ¿Quieres vincular tu cuenta de Facebook con tu cuenta de Google?");
-
         builder.setPositiveButton("Sí", (dialog, which) -> {
-            // Redirigir al usuario para que inicie sesión con Google
             Intent signInIntent = googleSignInClient.getSignInIntent();
             startActivityForResult(signInIntent, RC_SIGN_IN_COLLISION);
         });
-
         builder.setNegativeButton("No", (dialog, which) -> {
             dialog.dismiss();
             Toast.makeText(this, "Inicio de sesión cancelado", Toast.LENGTH_SHORT).show();
         });
-
         AlertDialog dialog = builder.create();
         dialog.show();
     }
 
-    // Manejar el resultado de las actividades iniciadas
+    // Manejar el resultado de actividades iniciadas (Google y Facebook)
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        callbackManager.onActivityResult(requestCode, resultCode, data); // Facebook
-
+        callbackManager.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_SIGN_IN_GOOGLE) {
-            // Resultado de Google Sign-In
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
@@ -220,7 +259,6 @@ public class LoginActivity extends AppCompatActivity {
                 Log.e(TAG, "Google sign-in failed: " + e.getMessage());
             }
         } else if (requestCode == RC_SIGN_IN_COLLISION) {
-            // Resultado de Google Sign-In para resolver colisión
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
@@ -254,7 +292,7 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    // Autenticación con Firebase usando Google y vincular con las credenciales de Facebook
+    // Autenticación con Firebase usando Google para vincular con Facebook
     private void autentificarFirebaseGoogleLink(String idToken) {
         Log.d(TAG, "Authenticating with Firebase using Google ID Token for linking");
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
@@ -263,7 +301,6 @@ public class LoginActivity extends AppCompatActivity {
                 Log.d(TAG, "Firebase authentication with Google successful for linking");
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null && pendingFacebookCredential != null) {
-                    // Vincular las credenciales de Facebook a la cuenta de Google
                     user.linkWithCredential(pendingFacebookCredential)
                             .addOnCompleteListener(linkTask -> {
                                 if (linkTask.isSuccessful()) {
@@ -281,13 +318,13 @@ public class LoginActivity extends AppCompatActivity {
                     Toast.makeText(this, "No se encontraron credenciales de Facebook para vincular", Toast.LENGTH_SHORT).show();
                 }
             } else {
-                Toast.makeText(this, "Autenticación fallida durante la vinculación con Google", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Autenticación fallida durante la vinculación con Google", Toast.LENGTH_SHORT).show();
                 Log.e(TAG, "Firebase authentication with Google failed during linking: " + task.getException().getMessage());
             }
         });
     }
 
-    // Redirigir a MainActivity después de iniciar sesión
+    // Redirigir a MainActivity
     private void irAMainActivity() {
         FirebaseUser usuario = firebaseAuth.getCurrentUser();
         if (usuario != null) {
@@ -303,7 +340,6 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    // Cerrar UsuarioDAO al destruir la actividad
     @Override
     protected void onDestroy() {
         super.onDestroy();
