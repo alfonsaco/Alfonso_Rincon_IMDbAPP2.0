@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -176,5 +177,24 @@ public class MainActivity extends AppCompatActivity {
         if (usuarioDAO != null) {
             usuarioDAO.close();
         }
+    }
+
+    // ABRIR LA ACTIVITY EDITUSER y enviar datos del usuario
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_edit) {
+            Intent intent = new Intent(this, EditUserActivity.class);
+            // Recuperar datos del usuario actual
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (currentUser != null) {
+                intent.putExtra("nombre", currentUser.getDisplayName());
+                intent.putExtra("email", currentUser.getEmail());
+                intent.putExtra("imagen", currentUser.getPhotoUrl() != null ? currentUser.getPhotoUrl().toString() : null);
+            }
+            startActivity(intent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

@@ -15,7 +15,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import edu.pruebas.rincon_alfonsoimdbapp.R;
 import edu.pruebas.rincon_alfonsoimdbapp.adapters.MovieAdapter;
@@ -27,10 +26,8 @@ import edu.pruebas.rincon_alfonsoimdbapp.utils.Constants;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
-public class HomeFragment extends Fragment {
+public class Top10Fragment extends Fragment {
 
     private RecyclerView recyclerView;
     private MovieAdapter adapter;

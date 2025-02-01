@@ -2,7 +2,6 @@ package edu.pruebas.rincon_alfonsoimdbapp.ui.slideshow;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,7 +31,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class SlideshowFragment extends Fragment {
+public class BuscarFragment extends Fragment {
 
     // Claves de la API, para poder realizar las peticiones
     private static final String TAG = "SlideshowFragment";

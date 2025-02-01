@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".EditUserActivity">
+
+    <EditText
+        android:id="@+id/etxtNombreCambio"
+        android:layout_width="306dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="55dp"
+        android:ems="10"
+        android:hint="Nombre"
+        android:inputType="text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/etxtEmailCambio"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:ems="10"
+        android:hint="Email"
+        android:inputType="textEmailAddress"
+        app:layout_constraintEnd_toEndOf="@+id/etxtNombreCambio"
+        app:layout_constraintStart_toStartOf="@+id/etxtNombreCambio"
+        app:layout_constraintTop_toBottomOf="@+id/etxtNombreCambio" />
+
+    <EditText
+        android:id="@+id/etxtDireccionNueva"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:ems="10"
+        android:hint="Dirección"
+        android:inputType="textPostalAddress"
+        app:layout_constraintEnd_toEndOf="@+id/etxtEmailCambio"
+        app:layout_constraintStart_toStartOf="@+id/etxtEmailCambio"
+        app:layout_constraintTop_toBottomOf="@+id/etxtEmailCambio" />
+
+    <Button
+        android:id="@+id/btnDireccion"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="SELECCIONAR DIRECCIÓN"
+        app:layout_constraintEnd_toEndOf="@+id/etxtDireccionNueva"
+        app:layout_constraintStart_toStartOf="@+id/etxtDireccionNueva"
+        app:layout_constraintTop_toBottomOf="@+id/etxtDireccionNueva" />
+
+    <EditText
+        android:id="@+id/editTextPhone"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:ems="10"
+        android:hint="Teféfono"
+        android:inputType="phone"
+        app:layout_constraintEnd_toEndOf="@+id/btnDireccion"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="@+id/btnDireccion"
+        app:layout_constraintTop_toBottomOf="@+id/btnDireccion" />
+
+    <Button
+        android:id="@+id/btnGuardarCambios"
+        android:layout_width="310dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:text="SAVE"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/button4"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="SELECT IMAGE"
+        app:layout_constraintEnd_toEndOf="@+id/imageView3"
+        app:layout_constraintStart_toStartOf="@+id/imageView3"
+        app:layout_constraintTop_toBottomOf="@+id/imageView3" />
+
+    <ImageView
+        android:id="@+id/imageView3"
+        android:layout_width="154dp"
+        android:layout_height="147dp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintEnd_toEndOf="@+id/editTextPhone"
+        app:layout_constraintStart_toStartOf="@+id/editTextPhone"
+        app:layout_constraintTop_toBottomOf="@+id/editTextPhone"
+        tools:srcCompat="@tools:sample/avatars" />
+</androidx.constraintlayout.widget.ConstraintLayout>
