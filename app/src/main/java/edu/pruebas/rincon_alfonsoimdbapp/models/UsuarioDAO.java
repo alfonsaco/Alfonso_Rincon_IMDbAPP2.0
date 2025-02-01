@@ -78,6 +78,19 @@ public class UsuarioDAO {
         return null;
     }
 
+    // Registrar un nuevo login (inserta un registro nuevo con el timestamp de login y sin logout)
+    public long registrarLogin(String nombre, String email, long loginTime) {
+        ContentValues values = new ContentValues();
+        values.put(UserDatabaseHelper.COLUMN_NOMBRE, nombre);
+        values.put(UserDatabaseHelper.COLUMN_EMAIL, email);
+        values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN, loginTime);
+        // Al registrar el login, aún no se ha hecho logout, se puede guardar 0 o null.
+        values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGOUT, 0);
+
+        return database.insert(UserDatabaseHelper.TABLE_USUARIOS, null, values);
+    }
+
+
     // Eliminar un usuario por Email
     public int eliminarUsuario(String email) {
         return database.delete(UserDatabaseHelper.TABLE_USUARIOS,
