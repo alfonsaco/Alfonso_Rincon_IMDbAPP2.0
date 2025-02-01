@@ -8,7 +8,7 @@ import android.util.Log;
 public class UserDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "users.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 4;
 
     // Tabla Usuarios
     public static final String TABLE_USUARIOS = "Usuarios";
@@ -24,8 +24,8 @@ public class UserDatabaseHelper extends SQLiteOpenHelper {
                     COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     COLUMN_NOMBRE + " TEXT NOT NULL, " +
                     COLUMN_EMAIL + " TEXT NOT NULL, " +
-                    COLUMN_ULTIMO_LOGIN + " INTEGER, " +
-                    COLUMN_ULTIMO_LOGOUT + " INTEGER" +
+                    COLUMN_ULTIMO_LOGIN + " TEXT, " +
+                    COLUMN_ULTIMO_LOGOUT + " TEXT" +
                     ");";
 
     public UserDatabaseHelper(Context context) {
