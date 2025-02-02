@@ -9,7 +9,7 @@
 
     <fragment
         android:id="@+id/nav_home"
-        android:name="edu.pruebas.rincon_alfonsoimdbapp.ui.home.HomeFragment"
+        android:name="edu.pruebas.rincon_alfonsoimdbapp.ui.home.Top10Fragment"
         android:label="@string/menu_home"
         tools:layout="@layout/fragment_home" />
 
@@ -21,7 +21,7 @@
 
     <fragment
         android:id="@+id/nav_slideshow"
-        android:name="edu.pruebas.rincon_alfonsoimdbapp.ui.slideshow.SlideshowFragment"
+        android:name="edu.pruebas.rincon_alfonsoimdbapp.ui.slideshow.BuscarFragment"
         android:label="@string/menu_slideshow"
         tools:layout="@layout/fragment_slideshow" />
 </navigation>

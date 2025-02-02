@@ -40,6 +40,7 @@ import java.util.Arrays;
 
 import edu.pruebas.rincon_alfonsoimdbapp.models.Usuario;
 import edu.pruebas.rincon_alfonsoimdbapp.models.UsuarioDAO;
+import edu.pruebas.rincon_alfonsoimdbapp.utils.DateTimeUtils;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -84,7 +85,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // Configurar Google Sign-In
         GoogleSignInOptions googleSignInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id)) // Valor definido en strings.xml
+                .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
         googleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions);
@@ -185,16 +186,21 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    // Método para insertar o actualizar usuario (actualmente registra login en la tabla de usuarios)
+    // Método para insertar o actualizar usuario (verifica si ya existe para actualizar el login)
     private void insertarOActualizarUsuario(FirebaseUser usuarioFirebase) {
         String email = usuarioFirebase.getEmail();
         String nombre = usuarioFirebase.getDisplayName() != null ? usuarioFirebase.getDisplayName() : "Usuario";
-        long timestamp = System.currentTimeMillis();
-        // En este esquema se registra un nuevo evento de login para cada autenticación.
-        usuarioDAO.registrarLogin(nombre, email, timestamp);
-        Log.d("LoginActivity", "Nuevo login registrado para: " + email);
-    }
+        String timestamp = DateTimeUtils.getCurrentTimestamp();
 
+        Usuario usuarioExistente = usuarioDAO.obtenerUsuarioPorEmail(email);
+        if (usuarioExistente != null) {
+            usuarioDAO.actualizarUltimoLogin(email, timestamp);
+            Log.d("LoginActivity", "Login actualizado para: " + email);
+        } else {
+            usuarioDAO.insertarUsuario(new Usuario(nombre, email, timestamp, ""));
+            Log.d("LoginActivity", "Nuevo usuario insertado: " + email);
+        }
+    }
 
     // Manejar el token de acceso de Facebook y autenticar en Firebase
     private void handleFacebookAccessToken(AccessToken token) {

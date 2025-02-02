@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -28,6 +29,7 @@ import androidx.navigation.ui.NavigationUI;
 import edu.pruebas.rincon_alfonsoimdbapp.databinding.ActivityMainBinding;
 import edu.pruebas.rincon_alfonsoimdbapp.models.Usuario;
 import edu.pruebas.rincon_alfonsoimdbapp.models.UsuarioDAO;
+import edu.pruebas.rincon_alfonsoimdbapp.utils.DateTimeUtils;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -53,8 +55,6 @@ public class MainActivity extends AppCompatActivity {
 
         DrawerLayout drawer = binding.drawerLayout;
         NavigationView navigationView = binding.navView;
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow)
                 .setOpenableLayout(drawer)
@@ -68,18 +68,15 @@ public class MainActivity extends AppCompatActivity {
         googleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions);
 
         // OBTENER LOS DATOS DEL INTENT
-        // Se obtienen las vistas del nav_header. Se utilizará esto para acceder a los elementos
         View headerView = navigationView.getHeaderView(0);
-
         TextView nombreTextView = headerView.findViewById(R.id.nombreEmail);
         TextView emailTextView = headerView.findViewById(R.id.email);
         ImageView imageView = headerView.findViewById(R.id.imagenEmail);
-        // Se obtienen los datos de los intents
+
         String nombreUsuario = getIntent().getStringExtra("nombre");
         String emailUsuario = getIntent().getStringExtra("email");
         String imagenUsuario = getIntent().getStringExtra("imagen");
 
-        // Ponemos los datos en los componentes
         nombreTextView.setText(nombreUsuario);
         emailTextView.setText(emailUsuario);
         if (imagenUsuario != null) {
@@ -93,18 +90,10 @@ public class MainActivity extends AppCompatActivity {
         btnLogOut.setOnClickListener(v -> {
             FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
             if (currentUser != null) {
-                // Actualizar UltimoLogout
                 actualizarUltimoLogout(currentUser.getEmail());
-
-                // Cerrar sesión en Firebase
                 FirebaseAuth.getInstance().signOut();
-
-                // Cerrar sesión en Google
                 googleSignInClient.signOut().addOnCompleteListener(task -> {
-                    // Cerrar sesión en Facebook
                     LoginManager.getInstance().logOut();
-
-                    // Redirigir al usuario al LoginActivity
                     Intent intent = new Intent(MainActivity.this, LoginActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
@@ -120,9 +109,9 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navigationView, navController);
     }
 
-    // Método para actualizar UltimoLogout
+    // Método para actualizar UltimoLogout usando el formato correcto
     private void actualizarUltimoLogout(String email) {
-        long timestamp = System.currentTimeMillis();
+        String timestamp = DateTimeUtils.getCurrentTimestamp();
         Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(email);
         if (usuario != null) {
             usuarioDAO.actualizarUltimoLogout(email, timestamp);
@@ -135,17 +124,20 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // Aplicación entró en primer plano
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
-            long timestamp = System.currentTimeMillis();
+            String timestamp = DateTimeUtils.getCurrentTimestamp();
             Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(currentUser.getEmail());
             if (usuario != null) {
                 usuarioDAO.actualizarUltimoLogin(currentUser.getEmail(), timestamp);
                 Log.d("MainActivity", "UltimoLogin actualizado para: " + currentUser.getEmail());
             } else {
-                // Insertar nuevo usuario si no existe
-                Usuario nuevoUsuario = new Usuario(currentUser.getDisplayName(), currentUser.getEmail(), timestamp, 0);
+                Usuario nuevoUsuario = new Usuario(
+                        currentUser.getDisplayName(),
+                        currentUser.getEmail(),
+                        timestamp,
+                        ""
+                );
                 usuarioDAO.insertarUsuario(nuevoUsuario);
                 Log.d("MainActivity", "Nuevo usuario insertado: " + currentUser.getEmail());
             }
@@ -155,10 +147,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        // Aplicación pasó a segundo plano
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
-            long timestamp = System.currentTimeMillis();
+            String timestamp = DateTimeUtils.getCurrentTimestamp();
             Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(currentUser.getEmail());
             if (usuario != null) {
                 usuarioDAO.actualizarUltimoLogout(currentUser.getEmail(), timestamp);
@@ -169,7 +160,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; este método agrega elementos al action bar si está presente.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
@@ -181,12 +171,30 @@ public class MainActivity extends AppCompatActivity {
                 || super.onSupportNavigateUp();
     }
 
-    // Cerrar UsuarioDAO al destruir la actividad
     @Override
     protected void onDestroy() {
         super.onDestroy();
         if (usuarioDAO != null) {
             usuarioDAO.close();
         }
+    }
+
+    // ABRIR LA ACTIVITY EDITUSER y enviar datos del usuario
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_edit) {
+            Intent intent = new Intent(this, EditUserActivity.class);
+            // Recuperar datos del usuario actual
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (currentUser != null) {
+                intent.putExtra("nombre", currentUser.getDisplayName());
+                intent.putExtra("email", currentUser.getEmail());
+                intent.putExtra("imagen", currentUser.getPhotoUrl() != null ? currentUser.getPhotoUrl().toString() : null);
+            }
+            startActivity(intent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
