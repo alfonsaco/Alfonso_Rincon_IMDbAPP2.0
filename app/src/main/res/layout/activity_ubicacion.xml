@@ -13,10 +13,11 @@
         android:layout_width="365dp"
         android:layout_height="102dp"
         android:layout_margin="8dp"
-        android:layout_marginBottom="30dp"
+        android:layout_marginBottom="32dp"
         app:layout_constraintBottom_toTopOf="@+id/map"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <fragment
         android:id="@+id/map"
@@ -24,13 +25,13 @@
         android:layout_width="354dp"
         android:layout_height="318dp"
         android:layout_marginBottom="88dp"
-        app:layout_constraintBottom_toTopOf="@+id/buttonConfirmAddress"
+        app:layout_constraintBottom_toTopOf="@+id/btnConfirmarUbi"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.491"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
-        android:id="@+id/buttonConfirmAddress"
+        android:id="@+id/btnConfirmarUbi"
         android:layout_width="295dp"
         android:layout_height="47dp"
         android:layout_marginBottom="16dp"

@@ -1,6 +1,9 @@
 package edu.pruebas.rincon_alfonsoimdbapp;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -27,12 +30,17 @@ public class UbicacionActivity extends AppCompatActivity implements OnMapReadyCa
 
     private GoogleMap mMap;
     private AutocompleteSupportFragment autocompleteFragment;
+    private Button btnConfirmarUbi;
+    // Variable para almacenar la dirección seleccionada
+    private String selectedAddress = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_ubicacion);
+
+        btnConfirmarUbi = findViewById(R.id.btnConfirmarUbi);
 
         // Aplicar insets para pantallas Edge-to-Edge
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -41,25 +49,23 @@ public class UbicacionActivity extends AppCompatActivity implements OnMapReadyCa
             return insets;
         });
 
-        // Inicializa Places (si aún no lo has hecho en la aplicación)
+        // Inicializa Places (si aún no se ha hecho)
         if (!Places.isInitialized()) {
-            // Reemplaza "TU_API_KEY" por tu clave de API
             Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
         }
 
-        // Obtener el SupportMapFragment y solicitar la carga del mapa de forma asíncrona
+        // Obtener el SupportMapFragment y solicitar la carga del mapa
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getSupportFragmentManager().findFragmentById(R.id.map);
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         }
 
-        // Obtener el AutocompleteSupportFragment
+        // Obtener el AutocompleteSupportFragment y configurarlo
         FragmentManager fragmentManager = getSupportFragmentManager();
         autocompleteFragment = (AutocompleteSupportFragment)
                 fragmentManager.findFragmentById(R.id.autocomplete_fragment);
         if (autocompleteFragment != null) {
-            // Configurar los campos que queremos recibir (ID, nombre, lat/lng y dirección)
             autocompleteFragment.setPlaceFields(Arrays.asList(
                     Place.Field.ID,
                     Place.Field.NAME,
@@ -70,7 +76,8 @@ public class UbicacionActivity extends AppCompatActivity implements OnMapReadyCa
             autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
                 @Override
                 public void onPlaceSelected(@NonNull Place place) {
-                    // Cuando se selecciona un lugar, mueve la cámara del mapa a esa ubicación.
+                    // Guarda la dirección seleccionada
+                    selectedAddress = place.getAddress();
                     if (mMap != null && place.getLatLng() != null) {
                         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 15f));
                     }
@@ -82,6 +89,18 @@ public class UbicacionActivity extends AppCompatActivity implements OnMapReadyCa
                 }
             });
         }
+
+        // Al pulsar el botón confirmar, se devuelve la dirección seleccionada
+        btnConfirmarUbi.setOnClickListener(v -> {
+            if (!selectedAddress.isEmpty()) {
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra("address", selectedAddress);
+                setResult(Activity.RESULT_OK, resultIntent);
+                finish();
+            } else {
+                Toast.makeText(UbicacionActivity.this, "Selecciona una dirección primero", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override

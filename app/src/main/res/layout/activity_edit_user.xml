@@ -53,6 +53,20 @@
         app:layout_constraintStart_toStartOf="@+id/etxtDireccionNueva"
         app:layout_constraintTop_toBottomOf="@+id/etxtDireccionNueva" />
 
+    <com.hbb20.CountryCodePicker
+        android:id="@+id/countryCodePicker"
+        android:layout_width="0dp"
+        android:layout_height="42dp"
+        android:layout_marginTop="16dp"
+        app:ccp_showArrow="true"
+        app:ccp_showFlag="true"
+        app:ccp_showFullName="false"
+        app:ccp_showNameCode="false"
+        app:ccp_showPhoneCode="true"
+        app:layout_constraintEnd_toEndOf="@+id/editTextPhone"
+        app:layout_constraintStart_toStartOf="@+id/editTextPhone"
+        app:layout_constraintTop_toBottomOf="@+id/btnDireccion" />
+
     <EditText
         android:id="@+id/editTextPhone"
         android:layout_width="0dp"
@@ -64,7 +78,7 @@
         app:layout_constraintEnd_toEndOf="@+id/btnDireccion"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="@+id/btnDireccion"
-        app:layout_constraintTop_toBottomOf="@+id/btnDireccion" />
+        app:layout_constraintTop_toBottomOf="@+id/countryCodePicker" />
 
     <Button
         android:id="@+id/btnGuardarCambios"
