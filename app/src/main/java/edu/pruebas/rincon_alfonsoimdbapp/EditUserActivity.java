@@ -76,7 +76,7 @@ public class EditUserActivity extends AppCompatActivity {
         usuarioDAO = new UsuarioDAO(this);
         usuarioDAO.open();
 
-        // Recuperar datos enviados desde MainActivity
+        // Recuperar datos enviados desde MainActivity (por ejemplo, en el Intent inicial)
         String nombre = getIntent().getStringExtra("nombre");
         String email = getIntent().getStringExtra("email");
         String imagen = getIntent().getStringExtra("imagen");
@@ -88,6 +88,7 @@ public class EditUserActivity extends AppCompatActivity {
         if (email != null) {
             etxtEmailCambio.setText(email);
         }
+        // Se usa la imagen que viene en el Intent (por defecto)
         if (imagen != null && !imagen.isEmpty()) {
             Glide.with(this)
                     .load(imagen)
@@ -95,7 +96,7 @@ public class EditUserActivity extends AppCompatActivity {
             selectedImageUri = imagen;
         }
 
-        // Cargar datos adicionales (dirección y teléfono) de la base de datos
+        // Consultar en la BD los datos actuales (dirección, teléfono e imagen) para sobreescribir los valores
         Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(email);
         if (usuario != null) {
             if (usuario.getDireccion() != null && !usuario.getDireccion().isEmpty()) {
@@ -103,6 +104,11 @@ public class EditUserActivity extends AppCompatActivity {
             }
             if (usuario.getTelefono() != null && !usuario.getTelefono().isEmpty()) {
                 editTextPhone.setText(usuario.getTelefono());
+            }
+            // Si en la BD se ha actualizado la imagen, la mostramos
+            if (usuario.getImagen() != null && !usuario.getImagen().isEmpty()) {
+                Glide.with(this).load(usuario.getImagen()).into(imageView3);
+                selectedImageUri = usuario.getImagen();
             }
         }
 
@@ -113,11 +119,11 @@ public class EditUserActivity extends AppCompatActivity {
                     if (result.getResultCode() == Activity.RESULT_OK) {
                         Intent data = result.getData();
                         Uri resultUri = null;
-                        // Si se obtuvo URI de la galería
+                        // Intent para obtener imagen desde la galería (ACTION_GET_CONTENT)
                         if (data != null && data.getData() != null) {
                             resultUri = data.getData();
                         }
-                        // Si no, usar la URI de la cámara
+                        // Si no se obtuvo desde la galería, se asume que fue de la cámara
                         if (resultUri == null && cameraImageUri != null) {
                             resultUri = cameraImageUri;
                         }
@@ -131,7 +137,7 @@ public class EditUserActivity extends AppCompatActivity {
                 }
         );
 
-        // Al pulsar el botón de foto se abre el chooser típico del sistema
+        // Al pulsar el botón de foto se abre el chooser típico del sistema (con cámara y galería)
         btnFoto.setOnClickListener(v -> openImageChooser());
 
         // Al pulsar "Guardar Cambios", se actualizan los datos en la base de datos
@@ -145,7 +151,7 @@ public class EditUserActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(EditUserActivity.this, "Error al actualizar datos", Toast.LENGTH_SHORT).show();
             }
-            // Enviar el resultado a MainActivity para que actualice la imagen, si se desea
+            // Enviar el resultado a MainActivity para que actualice la imagen
             Intent resultIntent = new Intent();
             resultIntent.putExtra("imagen", selectedImageUri);
             setResult(Activity.RESULT_OK, resultIntent);
@@ -162,11 +168,12 @@ public class EditUserActivity extends AppCompatActivity {
 
     /**
      * Abre un chooser que permite al usuario elegir entre tomar una foto o seleccionar una imagen.
-     * Se utilizan las intenciones típicas del sistema para la cámara y para la galería.
+     * Se utilizan intenciones típicas: ACTION_IMAGE_CAPTURE para cámara y ACTION_GET_CONTENT para galería.
      */
     private void openImageChooser() {
-        // Intent para la galería
-        Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        // Intent para la galería usando ACTION_GET_CONTENT
+        Intent galleryIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        galleryIntent.setType("image/*");
 
         // Intent para la cámara
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -178,7 +185,7 @@ public class EditUserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        // Crear un chooser que combine ambas intenciones
+        // Combinar ambas intenciones en un chooser
         Intent chooserIntent = Intent.createChooser(galleryIntent, "Selecciona imagen o toma foto");
         if (cameraIntent.resolveActivity(getPackageManager()) != null) {
             chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cameraIntent});
@@ -188,7 +195,7 @@ public class EditUserActivity extends AppCompatActivity {
 
     /**
      * Crea un URI temporal para almacenar la foto tomada con la cámara.
-     * Es imprescindible tener configurado el FileProvider en el Manifest y el archivo file_paths.xml.
+     * Es imprescindible tener configurado el FileProvider en el Manifest y un archivo file_paths.xml.
      */
     private Uri createImageUri() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
@@ -196,5 +203,13 @@ public class EditUserActivity extends AppCompatActivity {
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File imageFile = File.createTempFile(imageFileName, ".jpg", storageDir);
         return FileProvider.getUriForFile(this, "edu.pruebas.rincon_alfonsoimdbapp.fileprovider", imageFile);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (usuarioDAO != null) {
+            usuarioDAO.close();
+        }
     }
 }
