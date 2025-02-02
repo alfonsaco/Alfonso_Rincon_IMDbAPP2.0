@@ -17,4 +17,6 @@
     <string name="fb_login_protocol_scheme">fb464689750038312</string>">
     <string name="facebook_client_token">09e727f80e213a7a97d75e2107feed4e</string>
     <string name="default_web_client_id"></string>
+
+    <string name="google_maps_key">AIzaSyAER7D-uvYpBOG3wZjz9z3AeGulqAci-OU</string>"
 </resources>

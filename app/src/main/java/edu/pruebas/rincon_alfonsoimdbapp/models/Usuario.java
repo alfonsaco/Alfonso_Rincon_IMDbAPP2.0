@@ -6,24 +6,36 @@ public class Usuario {
     private String email;
     private String ultimoLogin;
     private String ultimoLogout;
+    // Nuevos campos
+    private String direccion;
+    private String telefono;
+    private String imagen;
 
-    // Constructor sin id
-    public Usuario(String nombre, String email, String ultimoLogin, String ultimoLogout) {
+    // Constructor sin id, con nuevos campos
+    public Usuario(String nombre, String email, String ultimoLogin, String ultimoLogout,
+                   String direccion, String telefono, String imagen) {
         this.nombre = nombre;
         this.email = email;
         this.ultimoLogin = ultimoLogin;
         this.ultimoLogout = ultimoLogout;
+        this.direccion = direccion;
+        this.telefono = telefono;
+        this.imagen = imagen;
     }
 
     public Usuario() { }
 
     // Constructor con id
-    public Usuario(int id, String nombre, String email, String ultimoLogin, String ultimoLogout) {
+    public Usuario(int id, String nombre, String email, String ultimoLogin, String ultimoLogout,
+                   String direccion, String telefono, String imagen) {
         this.id = id;
         this.nombre = nombre;
         this.email = email;
         this.ultimoLogin = ultimoLogin;
         this.ultimoLogout = ultimoLogout;
+        this.direccion = direccion;
+        this.telefono = telefono;
+        this.imagen = imagen;
     }
 
     // Getters y Setters
@@ -41,4 +53,13 @@ public class Usuario {
 
     public String getUltimoLogout() { return ultimoLogout; }
     public void setUltimoLogout(String ultimoLogout) { this.ultimoLogout = ultimoLogout; }
+
+    public String getDireccion() { return direccion; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
+
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
+
+    public String getImagen() { return imagen; }
+    public void setImagen(String imagen) { this.imagen = imagen; }
 }

@@ -36,21 +36,16 @@ public class MainActivity extends AppCompatActivity {
     private AppBarConfiguration mAppBarConfiguration;
     private ActivityMainBinding binding;
     private GoogleSignInClient googleSignInClient;
-
-    // Instancia de UsuarioDAO
     private UsuarioDAO usuarioDAO;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Inicializar UsuarioDAO
         usuarioDAO = new UsuarioDAO(this);
         usuarioDAO.open();
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
         setSupportActionBar(binding.appBarMain.toolbar);
 
         DrawerLayout drawer = binding.drawerLayout;
@@ -60,14 +55,12 @@ public class MainActivity extends AppCompatActivity {
                 .setOpenableLayout(drawer)
                 .build();
 
-        // Inicializar GoogleSignInClient
         GoogleSignInOptions googleSignInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
         googleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions);
 
-        // OBTENER LOS DATOS DEL INTENT
         View headerView = navigationView.getHeaderView(0);
         TextView nombreTextView = headerView.findViewById(R.id.nombreEmail);
         TextView emailTextView = headerView.findViewById(R.id.email);
@@ -79,13 +72,12 @@ public class MainActivity extends AppCompatActivity {
 
         nombreTextView.setText(nombreUsuario);
         emailTextView.setText(emailUsuario);
-        if (imagenUsuario != null) {
+        if (imagenUsuario != null && !imagenUsuario.isEmpty()) {
             Glide.with(this).load(imagenUsuario).into(imageView);
         } else {
             imageView.setImageResource(R.mipmap.ic_launcher_round);
         }
 
-        // Botón de LogOut
         Button btnLogOut = headerView.findViewById(R.id.btnLogOut);
         btnLogOut.setOnClickListener(v -> {
             FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -109,7 +101,6 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navigationView, navController);
     }
 
-    // Método para actualizar UltimoLogout usando el formato correcto
     private void actualizarUltimoLogout(String email) {
         String timestamp = DateTimeUtils.getCurrentTimestamp();
         Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(email);
@@ -117,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
             usuarioDAO.actualizarUltimoLogout(email, timestamp);
             Log.d("MainActivity", "UltimoLogout actualizado para: " + email);
         } else {
-            Log.e("MainActivity", "Usuario no encontrado en la base de datos para actualizar UltimoLogout");
+            Log.e("MainActivity", "Usuario no encontrado en la BD para actualizar UltimoLogout");
         }
     }
 
@@ -131,12 +122,22 @@ public class MainActivity extends AppCompatActivity {
             if (usuario != null) {
                 usuarioDAO.actualizarUltimoLogin(currentUser.getEmail(), timestamp);
                 Log.d("MainActivity", "UltimoLogin actualizado para: " + currentUser.getEmail());
+                NavigationView navigationView = binding.navView;
+                View headerView = navigationView.getHeaderView(0);
+                ImageView imageView = headerView.findViewById(R.id.imagenEmail);
+                String imagenFromDB = usuario.getImagen();
+                if (imagenFromDB != null && !imagenFromDB.isEmpty()) {
+                    Glide.with(this).load(imagenFromDB).into(imageView);
+                }
             } else {
                 Usuario nuevoUsuario = new Usuario(
                         currentUser.getDisplayName(),
                         currentUser.getEmail(),
                         timestamp,
-                        ""
+                        "",
+                        "",  // Dirección vacía
+                        "",  // Teléfono vacío
+                        currentUser.getPhotoUrl() != null ? currentUser.getPhotoUrl().toString() : ""
                 );
                 usuarioDAO.insertarUsuario(nuevoUsuario);
                 Log.d("MainActivity", "Nuevo usuario insertado: " + currentUser.getEmail());
@@ -179,18 +180,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // ABRIR LA ACTIVITY EDITUSER y enviar datos del usuario
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_edit) {
             Intent intent = new Intent(this, EditUserActivity.class);
-            // Recuperar datos del usuario actual
             FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
             if (currentUser != null) {
                 intent.putExtra("nombre", currentUser.getDisplayName());
                 intent.putExtra("email", currentUser.getEmail());
-                intent.putExtra("imagen", currentUser.getPhotoUrl() != null ? currentUser.getPhotoUrl().toString() : null);
+                intent.putExtra("imagen", currentUser.getPhotoUrl() != null ? currentUser.getPhotoUrl().toString() : "");
             }
             startActivity(intent);
             return true;
