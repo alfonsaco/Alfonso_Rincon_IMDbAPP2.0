@@ -158,6 +158,14 @@ public class EditUserActivity extends AppCompatActivity {
             finish();
         });
 
+        btnDireccion.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(EditUserActivity.this, UbicacionActivity.class);
+                startActivity(intent);
+            }
+        });
+
         // Manejo de insets para pantallas Edge-to-Edge
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
