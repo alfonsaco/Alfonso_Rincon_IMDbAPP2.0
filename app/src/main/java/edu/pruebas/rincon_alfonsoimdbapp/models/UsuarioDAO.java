@@ -26,13 +26,16 @@ public class UsuarioDAO {
         dbHelper.close();
     }
 
-    // Insertar un nuevo usuario
+    // Insertar un nuevo usuario (se insertan también los nuevos campos, que pueden ser vacíos)
     public long insertarUsuario(Usuario usuario) {
         ContentValues values = new ContentValues();
         values.put(UserDatabaseHelper.COLUMN_NOMBRE, usuario.getNombre());
         values.put(UserDatabaseHelper.COLUMN_EMAIL, usuario.getEmail());
         values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN, usuario.getUltimoLogin());
         values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGOUT, usuario.getUltimoLogout());
+        values.put(UserDatabaseHelper.COLUMN_DIRECCION, usuario.getDireccion());
+        values.put(UserDatabaseHelper.COLUMN_TELEFONO, usuario.getTelefono());
+        values.put(UserDatabaseHelper.COLUMN_IMAGEN, usuario.getImagen());
         return database.insert(UserDatabaseHelper.TABLE_USUARIOS, null, values);
     }
 
@@ -52,7 +55,17 @@ public class UsuarioDAO {
                 UserDatabaseHelper.COLUMN_EMAIL + " = ?", new String[]{email});
     }
 
-    // Obtener un usuario por Email
+    // Actualizar los datos del usuario: dirección, teléfono e imagen
+    public int actualizarDatosUsuario(String email, String direccion, String telefono, String imagen) {
+        ContentValues values = new ContentValues();
+        values.put(UserDatabaseHelper.COLUMN_DIRECCION, direccion);
+        values.put(UserDatabaseHelper.COLUMN_TELEFONO, telefono);
+        values.put(UserDatabaseHelper.COLUMN_IMAGEN, imagen);
+        return database.update(UserDatabaseHelper.TABLE_USUARIOS, values,
+                UserDatabaseHelper.COLUMN_EMAIL + " = ?", new String[]{email});
+    }
+
+    // Obtener un usuario por Email (incluyendo los nuevos campos)
     public Usuario obtenerUsuarioPorEmail(String email) {
         Cursor cursor = database.query(UserDatabaseHelper.TABLE_USUARIOS,
                 null,
@@ -66,6 +79,9 @@ public class UsuarioDAO {
             usuario.setEmail(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_EMAIL)));
             usuario.setUltimoLogin(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN)));
             usuario.setUltimoLogout(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_ULTIMO_LOGOUT)));
+            usuario.setDireccion(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_DIRECCION)));
+            usuario.setTelefono(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_TELEFONO)));
+            usuario.setImagen(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_IMAGEN)));
             cursor.close();
             return usuario;
         }
@@ -83,6 +99,9 @@ public class UsuarioDAO {
             values.put(UserDatabaseHelper.COLUMN_EMAIL, email);
             values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN, loginTime);
             values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGOUT, "");
+            values.put(UserDatabaseHelper.COLUMN_DIRECCION, "");
+            values.put(UserDatabaseHelper.COLUMN_TELEFONO, "");
+            values.put(UserDatabaseHelper.COLUMN_IMAGEN, "");
             return database.insert(UserDatabaseHelper.TABLE_USUARIOS, null, values);
         }
     }

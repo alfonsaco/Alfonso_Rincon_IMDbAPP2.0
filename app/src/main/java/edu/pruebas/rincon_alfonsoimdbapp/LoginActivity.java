@@ -3,6 +3,9 @@ package edu.pruebas.rincon_alfonsoimdbapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -197,7 +200,9 @@ public class LoginActivity extends AppCompatActivity {
             usuarioDAO.actualizarUltimoLogin(email, timestamp);
             Log.d("LoginActivity", "Login actualizado para: " + email);
         } else {
-            usuarioDAO.insertarUsuario(new Usuario(nombre, email, timestamp, ""));
+            // Se insertan los nuevos campos: dirección y teléfono se dejan vacíos y se usa la foto de Firebase (o cadena vacía)
+            String imagen = (usuarioFirebase.getPhotoUrl() != null) ? usuarioFirebase.getPhotoUrl().toString() : "";
+            usuarioDAO.insertarUsuario(new Usuario(nombre, email, timestamp, "", "", "", imagen));
             Log.d("LoginActivity", "Nuevo usuario insertado: " + email);
         }
     }
@@ -338,7 +343,7 @@ public class LoginActivity extends AppCompatActivity {
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             intent.putExtra("nombre", usuario.getDisplayName());
             intent.putExtra("email", usuario.getEmail());
-            intent.putExtra("imagen", usuario.getPhotoUrl() != null ? usuario.getPhotoUrl().toString() : null);
+            intent.putExtra("imagen", usuario.getPhotoUrl() != null ? usuario.getPhotoUrl().toString() : "");
             startActivity(intent);
             finish();
         } else {

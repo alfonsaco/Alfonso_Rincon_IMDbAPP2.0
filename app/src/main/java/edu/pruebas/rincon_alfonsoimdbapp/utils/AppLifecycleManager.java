@@ -84,10 +84,14 @@ public class AppLifecycleManager implements LifecycleObserver {
         } else {
             FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
             if (firebaseUser != null) {
+                // Se pasan valores vacíos para dirección, teléfono e imagen
                 Usuario nuevoUsuario = new Usuario(
                         firebaseUser.getDisplayName(),
                         firebaseUser.getEmail(),
                         timestamp,
+                        "",
+                        "",
+                        "",
                         ""
                 );
                 usuarioDAO.insertarUsuario(nuevoUsuario);

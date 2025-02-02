@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
         googleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions);
 
-        // OBTENER LOS DATOS DEL INTENT
+        // OBTENER LOS DATOS DEL INTENT (en caso de que MainActivity se abra con extras)
         View headerView = navigationView.getHeaderView(0);
         TextView nombreTextView = headerView.findViewById(R.id.nombreEmail);
         TextView emailTextView = headerView.findViewById(R.id.email);
@@ -131,12 +131,24 @@ public class MainActivity extends AppCompatActivity {
             if (usuario != null) {
                 usuarioDAO.actualizarUltimoLogin(currentUser.getEmail(), timestamp);
                 Log.d("MainActivity", "UltimoLogin actualizado para: " + currentUser.getEmail());
+                // Actualizar la imagen del header según lo almacenado en la BD
+                NavigationView navigationView = binding.navView;
+                View headerView = navigationView.getHeaderView(0);
+                ImageView imageView = headerView.findViewById(R.id.imagenEmail);
+                String imagenFromDB = usuario.getImagen();
+                if (imagenFromDB != null && !imagenFromDB.isEmpty()) {
+                    Glide.with(this).load(imagenFromDB).into(imageView);
+                }
             } else {
+                // Si no existe, insertar nuevo usuario (usando la foto de Firebase o cadena vacía)
                 Usuario nuevoUsuario = new Usuario(
                         currentUser.getDisplayName(),
                         currentUser.getEmail(),
                         timestamp,
-                        ""
+                        "",
+                        "",  // Dirección vacía
+                        "",  // Teléfono vacío
+                        currentUser.getPhotoUrl() != null ? currentUser.getPhotoUrl().toString() : ""
                 );
                 usuarioDAO.insertarUsuario(nuevoUsuario);
                 Log.d("MainActivity", "Nuevo usuario insertado: " + currentUser.getEmail());
@@ -179,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // ABRIR LA ACTIVITY EDITUSER y enviar datos del usuario
+    // Al seleccionar el ítem de menú para editar el usuario se envían sus datos a EditUserActivity.
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -190,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
             if (currentUser != null) {
                 intent.putExtra("nombre", currentUser.getDisplayName());
                 intent.putExtra("email", currentUser.getEmail());
-                intent.putExtra("imagen", currentUser.getPhotoUrl() != null ? currentUser.getPhotoUrl().toString() : null);
+                intent.putExtra("imagen", currentUser.getPhotoUrl() != null ? currentUser.getPhotoUrl().toString() : "");
             }
             startActivity(intent);
             return true;
