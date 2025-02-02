@@ -9,7 +9,7 @@ public class UserDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "users.db";
     // Actualizamos la versión a 4 para incluir nuevos campos
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 6;
 
     // Tabla Usuarios y sus columnas
     public static final String TABLE_USUARIOS = "Usuarios";

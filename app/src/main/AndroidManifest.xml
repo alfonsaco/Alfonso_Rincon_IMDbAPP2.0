@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-    <!-- Declaración de permisos -->
+    xmlns:tools="http://schemas.android.com/tools"
+    package="edu.pruebas.rincon_alfonsoimdbapp">
+
+    <!-- Características y permisos -->
     <uses-feature
         android:name="android.hardware.telephony"
         android:required="false" />
@@ -30,50 +32,72 @@
         android:theme="@style/Theme.Rincon_AlfonsoIMDbAPP"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
-        <activity
-            android:name=".KeystoreManager"
-            android:exported="false" />
-        <activity
-            android:name=".UbicacionActivity"
-            android:exported="false" />
-        <activity
-            android:name=".EditUserActivity"
-            android:exported="false" />
 
+        <!-- FileProvider para compartir archivos (por ejemplo, imágenes capturadas con la cámara) -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="edu.pruebas.rincon_alfonsoimdbapp.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Meta-datos de Facebook -->
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id" />
         <meta-data
             android:name="com.facebook.sdk.ClientToken"
             android:value="@string/facebook_client_token" />
+
+        <!-- Meta-dato de la API de Google Maps -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
+
+        <!-- Actividades -->
+        <!-- Nota: La actividad KeystoreManager es una clase de utilidad y no suele declararse como Activity.
+             Se incluye aquí solo si por alguna razón la has configurado como actividad. -->
+        <activity
+            android:name=".KeystoreManager"
+            android:exported="false" />
+
+        <activity
+            android:name=".UbicacionActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".EditUserActivity"
+            android:exported="false" />
 
         <activity
             android:name="com.facebook.FacebookActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
             android:label="@string/app_name" />
+
         <activity
             android:name="com.facebook.CustomTabActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
-
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-
                 <data android:scheme="@string/fb_login_protocol_scheme" />
             </intent-filter>
-        </activity> <!-- Otras actividades de tu aplicación -->
+        </activity>
+
         <activity
             android:name=".MovieListActivity"
             android:exported="true"
             android:screenOrientation="portrait" />
+
         <activity
             android:name=".MovieDetailsActivity"
             android:exported="true"
             android:screenOrientation="portrait" />
+
         <activity
             android:name=".LoginActivity"
             android:exported="true"
@@ -82,15 +106,17 @@
             android:theme="@style/Theme.Rincon_AlfonsoIMDbAPP.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Rincon_AlfonsoIMDbAPP.NoActionBar" /> <!-- Resolver conflicto AD_SERVICES_CONFIG -->
+            android:theme="@style/Theme.Rincon_AlfonsoIMDbAPP.NoActionBar" />
+
+        <!-- Propiedad para resolver conflicto con AD_SERVICES_CONFIG -->
         <property
             android:name="android.adservices.AD_SERVICES_CONFIG"
             android:resource="@xml/ad_services_config"

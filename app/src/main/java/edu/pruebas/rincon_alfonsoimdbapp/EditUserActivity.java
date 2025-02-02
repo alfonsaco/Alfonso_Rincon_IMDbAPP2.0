@@ -45,20 +45,15 @@ public class EditUserActivity extends AppCompatActivity {
     private ImageView imageView3;
     private CountryCodePicker countryCodePicker;
 
-    // Almacenará la URI seleccionada (como String)
     private String selectedImageUri = null;
 
-    // Launcher para el chooser de imagen (cámara y galería)
     private ActivityResultLauncher<Intent> imageChooserLauncher;
-    // Launcher para UbicacionActivity para obtener la dirección seleccionada
     private ActivityResultLauncher<Intent> ubicacionLauncher;
 
-    // Para almacenar temporalmente la URI de la foto tomada con la cámara
     private Uri cameraImageUri = null;
 
-    // UsuarioDAO para cargar y guardar datos del usuario
     private UsuarioDAO usuarioDAO;
-    private String userEmail; // se usará el email como clave
+    private String userEmail; // se usa como clave
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +61,6 @@ public class EditUserActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_edit_user);
 
-        // Inicializar vistas
         etxtNombreCambio = findViewById(R.id.etxtNombreCambio);
         etxtEmailCambio = findViewById(R.id.etxtEmailCambio);
         etxtDireccionNueva = findViewById(R.id.etxtDireccionNueva);
@@ -77,28 +71,23 @@ public class EditUserActivity extends AppCompatActivity {
         imageView3 = findViewById(R.id.imageView3);
         countryCodePicker = findViewById(R.id.countryCodePicker);
 
-        // Inicializar el DAO
         usuarioDAO = new UsuarioDAO(this);
         usuarioDAO.open();
 
-        // Recuperar datos enviados desde MainActivity
+        // Recibir datos de MainActivity
         String nombre = getIntent().getStringExtra("nombre");
         String email = getIntent().getStringExtra("email");
         String imagen = getIntent().getStringExtra("imagen");
-        userEmail = email;  // clave para actualizar en la BD
+        userEmail = email;
 
-        if (nombre != null) {
-            etxtNombreCambio.setText(nombre);
-        }
-        if (email != null) {
-            etxtEmailCambio.setText(email);
-        }
+        if (nombre != null) etxtNombreCambio.setText(nombre);
+        if (email != null) etxtEmailCambio.setText(email);
         if (imagen != null && !imagen.isEmpty()) {
             Glide.with(this).load(imagen).into(imageView3);
             selectedImageUri = imagen;
         }
 
-        // Consultar en la BD los datos actuales (dirección, teléfono e imagen)
+        // Cargar datos adicionales de la BD
         Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(email);
         if (usuario != null) {
             if (usuario.getDireccion() != null && !usuario.getDireccion().isEmpty()) {
@@ -113,7 +102,6 @@ public class EditUserActivity extends AppCompatActivity {
             }
         }
 
-        // Registrar el launcher para el chooser de imagen (cámara y galería)
         imageChooserLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -136,7 +124,6 @@ public class EditUserActivity extends AppCompatActivity {
                 }
         );
 
-        // Registrar el launcher para UbicacionActivity para obtener la dirección seleccionada
         ubicacionLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -149,42 +136,33 @@ public class EditUserActivity extends AppCompatActivity {
                 }
         );
 
-        // Al pulsar el botón de foto se abre el chooser típico del sistema (cámara y galería)
         btnFoto.setOnClickListener(v -> openImageChooser());
 
-        // Al pulsar el botón de dirección se lanza UbicacionActivity para seleccionar una ubicación
         btnDireccion.setOnClickListener(v -> {
             Intent intent = new Intent(EditUserActivity.this, UbicacionActivity.class);
             ubicacionLauncher.launch(intent);
         });
 
-        // Al pulsar "Guardar Cambios"
         btnGuardarCambios.setOnClickListener(v -> {
             String direccion = etxtDireccionNueva.getText().toString().trim();
             String telefono = editTextPhone.getText().toString().trim();
-
-            // Concatena el código de país y el número
             String fullPhone = countryCodePicker.getSelectedCountryCodeWithPlus() + telefono;
-            // Validación simple del número
-            if(!isValidPhoneNumber(fullPhone, countryCodePicker.getSelectedCountryNameCode())) {
+            if (!isValidPhoneNumber(fullPhone, countryCodePicker.getSelectedCountryNameCode())) {
                 Toast.makeText(this, "Número de teléfono inválido", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             int updated = usuarioDAO.actualizarDatosUsuario(userEmail, direccion, fullPhone, selectedImageUri);
             if (updated > 0) {
                 Toast.makeText(EditUserActivity.this, "Datos actualizados", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(EditUserActivity.this, "Error al actualizar datos", Toast.LENGTH_SHORT).show();
             }
-            // Enviar el resultado a MainActivity (opcional)
             Intent resultIntent = new Intent();
             resultIntent.putExtra("imagen", selectedImageUri);
             setResult(Activity.RESULT_OK, resultIntent);
             finish();
         });
 
-        // Manejo de insets para pantallas Edge-to-Edge
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -192,15 +170,10 @@ public class EditUserActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Abre un chooser que permite al usuario elegir entre tomar una foto o seleccionar una imagen.
-     */
     private void openImageChooser() {
-        // Intent para la galería usando ACTION_GET_CONTENT
         Intent galleryIntent = new Intent(Intent.ACTION_GET_CONTENT);
         galleryIntent.setType("image/*");
 
-        // Intent para la cámara
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (cameraIntent.resolveActivity(getPackageManager()) != null) {
             try {
@@ -210,7 +183,6 @@ public class EditUserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        // Combinar ambas intenciones en un chooser
         Intent chooserIntent = Intent.createChooser(galleryIntent, "Selecciona imagen o toma foto");
         if (cameraIntent.resolveActivity(getPackageManager()) != null) {
             chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cameraIntent});
@@ -218,9 +190,6 @@ public class EditUserActivity extends AppCompatActivity {
         imageChooserLauncher.launch(chooserIntent);
     }
 
-    /**
-     * Crea un URI temporal para almacenar la foto tomada con la cámara.
-     */
     private Uri createImageUri() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
@@ -229,10 +198,6 @@ public class EditUserActivity extends AppCompatActivity {
         return FileProvider.getUriForFile(this, "edu.pruebas.rincon_alfonsoimdbapp.fileprovider", imageFile);
     }
 
-    /**
-     * Valida el número de teléfono.
-     * Por ejemplo, se comprueba que tras eliminar caracteres no numéricos tenga al menos 10 dígitos.
-     */
     private boolean isValidPhoneNumber(String fullPhone, String countryCode) {
         String digits = fullPhone.replaceAll("\\D+", "");
         return digits.length() >= 10;
