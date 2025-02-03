@@ -29,12 +29,12 @@ public class UsuarioDAO {
 
     public long insertarUsuario(Usuario usuario) {
         ContentValues values = new ContentValues();
-        // Se inserta el UID (id) del usuario
         values.put(UserDatabaseHelper.COLUMN_ID, usuario.getId());
         values.put(UserDatabaseHelper.COLUMN_NOMBRE, usuario.getNombre());
         values.put(UserDatabaseHelper.COLUMN_EMAIL, usuario.getEmail());
         values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN, usuario.getUltimoLogin());
         values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGOUT, usuario.getUltimoLogout());
+
         try {
             KeystoreManager km = new KeystoreManager();
             String encryptedDireccion = (usuario.getDireccion() != null && !usuario.getDireccion().isEmpty())
@@ -43,8 +43,6 @@ public class UsuarioDAO {
                     ? km.encrypt(usuario.getTelefono()) : "";
             values.put(UserDatabaseHelper.COLUMN_DIRECCION, encryptedDireccion);
             values.put(UserDatabaseHelper.COLUMN_TELEFONO, encryptedTelefono);
-            Log.d(TAG, "InsertarUsuario - Dirección cifrada: " + encryptedDireccion);
-            Log.d(TAG, "InsertarUsuario - Teléfono cifrado: " + encryptedTelefono);
         } catch (Exception e) {
             Log.e(TAG, "Error cifrando datos en insertarUsuario: " + e.getMessage());
             e.printStackTrace();
@@ -54,6 +52,7 @@ public class UsuarioDAO {
         values.put(UserDatabaseHelper.COLUMN_IMAGEN, usuario.getImagen());
         return database.insert(UserDatabaseHelper.TABLE_USUARIOS, null, values);
     }
+
 
     public int actualizarUltimoLogin(String email, String ultimoLogin) {
         ContentValues values = new ContentValues();

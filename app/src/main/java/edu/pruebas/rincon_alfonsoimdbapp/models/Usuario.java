@@ -1,7 +1,7 @@
 package edu.pruebas.rincon_alfonsoimdbapp.models;
 
 public class Usuario {
-    private String id;  // UID de Firebase
+    private String id;
     private String nombre;
     private String email;
     private String ultimoLogin;
@@ -10,18 +10,6 @@ public class Usuario {
     private String direccion;
     private String telefono;
     private String imagen;
-
-    // Constructor SIN ID (útil si luego se asigna el UID, aunque en este caso conviene usar el que incluye el UID)
-    public Usuario(String nombre, String email, String ultimoLogin, String ultimoLogout,
-                   String direccion, String telefono, String imagen) {
-        this.nombre = nombre;
-        this.email = email;
-        this.ultimoLogin = ultimoLogin;
-        this.ultimoLogout = ultimoLogout;
-        this.direccion = direccion;
-        this.telefono = telefono;
-        this.imagen = imagen;
-    }
 
     // Constructor CON ID (el que debes usar al crear un usuario nuevo, pasando currentUser.getUid())
     public Usuario(String id, String nombre, String email, String ultimoLogin, String ultimoLogout,

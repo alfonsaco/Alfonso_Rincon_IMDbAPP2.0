@@ -195,17 +195,21 @@ public class LoginActivity extends AppCompatActivity {
         String nombre = usuarioFirebase.getDisplayName() != null ? usuarioFirebase.getDisplayName() : "Usuario";
         String timestamp = DateTimeUtils.getCurrentTimestamp();
 
+        // Obtenemos el UID de Firebase
+        String uid = usuarioFirebase.getUid();
+
         Usuario usuarioExistente = usuarioDAO.obtenerUsuarioPorEmail(email);
         if (usuarioExistente != null) {
             usuarioDAO.actualizarUltimoLogin(email, timestamp);
             Log.d("LoginActivity", "Login actualizado para: " + email);
         } else {
-            // Se insertan los nuevos campos: dirección y teléfono se dejan vacíos y se usa la foto de Firebase (o cadena vacía)
+            // Insertamos el usuario con el UID correcto
             String imagen = (usuarioFirebase.getPhotoUrl() != null) ? usuarioFirebase.getPhotoUrl().toString() : "";
-            usuarioDAO.insertarUsuario(new Usuario(nombre, email, timestamp, "", "", "", imagen));
+            usuarioDAO.insertarUsuario(new Usuario(uid, nombre, email, timestamp, "", "", "", imagen));
             Log.d("LoginActivity", "Nuevo usuario insertado: " + email);
         }
     }
+
 
     // Manejar el token de acceso de Facebook y autenticar en Firebase
     private void handleFacebookAccessToken(AccessToken token) {
