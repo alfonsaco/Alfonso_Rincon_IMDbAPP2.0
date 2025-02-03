@@ -51,7 +51,7 @@ public class FavoritesManager {
         if (resultado == -1) {
             // Si la inserción falla, registrar un error y cerrar la base de datos
             Log.e("FavoritesManager", "Error al insertar película en la base de datos.");
-            db.close();
+            //db.close();
             return false;
         } else {
             Log.d("FavoritesManager", "Película insertada con éxito. ID de inserción: " + resultado);
@@ -60,7 +60,7 @@ public class FavoritesManager {
         // Verificamos las películas con logs
         logParaVerLasPeliculas();
 
-        db.close();
+        //db.close();
         return true;
     }
 
@@ -83,7 +83,7 @@ public class FavoritesManager {
         boolean existe = (cursor.getCount() > 0);
 
         cursor.close();
-        db.close();
+        //db.close();
 
         return existe;
     }
@@ -97,7 +97,7 @@ public class FavoritesManager {
                 new String[]{idUsuario, idPelicula}
         );
 
-        db.close();
+        //db.close();
     }
 
     // Método que devuelve todas las películas favoritas por usuario
@@ -139,7 +139,7 @@ public class FavoritesManager {
             }
             cursor.close();
         }
-        db.close();
+        //db.close();
 
         return favoritos;
     }
@@ -177,6 +177,6 @@ public class FavoritesManager {
             Log.d("FavoritesManager", "No se encontraron registros en la tabla favoritos.");
         }
 
-        db.close();
+        //db.close();
     }
 }

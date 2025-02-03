@@ -8,6 +8,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+
+import com.google.firebase.FirebaseApp;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -41,6 +43,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Inicializar Firebase (esto es redundante si ya tienes el archivo google-services.json)
+        if (FirebaseApp.getApps(this).isEmpty()) {
+            FirebaseApp.initializeApp(this);
+        }
+
         usuarioDAO = new UsuarioDAO(this);
         usuarioDAO.open();
 
@@ -100,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
     }
+
 
     private void actualizarUltimoLogout(String email) {
         String timestamp = DateTimeUtils.getCurrentTimestamp();

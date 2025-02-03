@@ -86,6 +86,7 @@ public class AppLifecycleManager implements LifecycleObserver {
             if (firebaseUser != null) {
                 // Se pasan valores vacíos para dirección, teléfono e imagen
                 Usuario nuevoUsuario = new Usuario(
+                        firebaseUser.getUid(),
                         firebaseUser.getDisplayName(),
                         firebaseUser.getEmail(),
                         timestamp,
