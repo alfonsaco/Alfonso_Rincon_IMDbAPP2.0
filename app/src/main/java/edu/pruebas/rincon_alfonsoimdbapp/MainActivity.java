@@ -112,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Dentro de MainActivity.java, en onStart()
     @Override
     protected void onStart() {
         super.onStart();
@@ -122,21 +123,17 @@ public class MainActivity extends AppCompatActivity {
             if (usuario != null) {
                 usuarioDAO.actualizarUltimoLogin(currentUser.getEmail(), timestamp);
                 Log.d("MainActivity", "UltimoLogin actualizado para: " + currentUser.getEmail());
-                NavigationView navigationView = binding.navView;
-                View headerView = navigationView.getHeaderView(0);
-                ImageView imageView = headerView.findViewById(R.id.imagenEmail);
-                String imagenFromDB = usuario.getImagen();
-                if (imagenFromDB != null && !imagenFromDB.isEmpty()) {
-                    Glide.with(this).load(imagenFromDB).into(imageView);
-                }
+                // Actualización del header, etc.
             } else {
+                // Usamos el UID de Firebase en el constructor
                 Usuario nuevoUsuario = new Usuario(
+                        currentUser.getUid(),  // UID de Firebase
                         currentUser.getDisplayName(),
                         currentUser.getEmail(),
                         timestamp,
-                        "",
-                        "",  // Dirección vacía
-                        "",  // Teléfono vacío
+                        "", // Último Logout vacío
+                        "", // Dirección vacía
+                        "", // Teléfono vacío
                         currentUser.getPhotoUrl() != null ? currentUser.getPhotoUrl().toString() : ""
                 );
                 usuarioDAO.insertarUsuario(nuevoUsuario);
@@ -144,6 +141,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+
 
     @Override
     protected void onStop() {

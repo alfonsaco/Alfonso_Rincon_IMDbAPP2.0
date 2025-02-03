@@ -1,17 +1,17 @@
 package edu.pruebas.rincon_alfonsoimdbapp.models;
 
 public class Usuario {
-    private int id;
+    private String id;  // UID de Firebase
     private String nombre;
     private String email;
     private String ultimoLogin;
     private String ultimoLogout;
-    // Nuevos campos
+    // Nuevos campos:
     private String direccion;
     private String telefono;
     private String imagen;
 
-    // Constructor sin id, con nuevos campos
+    // Constructor SIN ID (útil si luego se asigna el UID, aunque en este caso conviene usar el que incluye el UID)
     public Usuario(String nombre, String email, String ultimoLogin, String ultimoLogout,
                    String direccion, String telefono, String imagen) {
         this.nombre = nombre;
@@ -23,10 +23,8 @@ public class Usuario {
         this.imagen = imagen;
     }
 
-    public Usuario() { }
-
-    // Constructor con id
-    public Usuario(int id, String nombre, String email, String ultimoLogin, String ultimoLogout,
+    // Constructor CON ID (el que debes usar al crear un usuario nuevo, pasando currentUser.getUid())
+    public Usuario(String id, String nombre, String email, String ultimoLogin, String ultimoLogout,
                    String direccion, String telefono, String imagen) {
         this.id = id;
         this.nombre = nombre;
@@ -38,9 +36,11 @@ public class Usuario {
         this.imagen = imagen;
     }
 
+    public Usuario() { }
+
     // Getters y Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }

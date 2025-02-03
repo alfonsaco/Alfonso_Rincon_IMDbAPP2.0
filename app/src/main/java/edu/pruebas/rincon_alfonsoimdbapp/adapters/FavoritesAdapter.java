@@ -7,19 +7,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.Toast;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
-
 import edu.pruebas.rincon_alfonsoimdbapp.MovieDetailsActivity;
 import edu.pruebas.rincon_alfonsoimdbapp.R;
 import edu.pruebas.rincon_alfonsoimdbapp.models.Movie;
 import edu.pruebas.rincon_alfonsoimdbapp.utils.Constants;
-
 import java.util.List;
 
 public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.ViewHolder> {
@@ -57,18 +52,18 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
         if (pelicula != null) {
             // Asignar datos a los componentes
             holder.tituloTextView.setText(pelicula.getTitulo());
-            String año = "Año no disponible";
+            String año = "";
             if (pelicula.getFechaSalida() != null && !pelicula.getFechaSalida().isEmpty()) {
                 año = pelicula.getFechaSalida().substring(0, 4);
             }
             holder.anioTextView.setText(año);
 
-            // Cargar la imagen del póster usando Glide
+            // Cargar la imagen del póster usando Glide, con placeholder en caso de no existir ruta
             String rutaImagen = pelicula.getRutaPoster();
             if (rutaImagen != null && !rutaImagen.isEmpty()) {
                 if (!rutaImagen.startsWith("http://") && !rutaImagen.startsWith("https://")) {
                     if (source.equals(Constants.SOURCE_TMDB)) {
-                        // Se verifica que la imagen contenga ese texto
+                        // Si la fuente es TMDB, se añade el prefijo correspondiente
                         rutaImagen = "https://image.tmdb.org/t/p/w500" + rutaImagen;
                     } else if (source.equals(Constants.SOURCE_IMD)) {
                         rutaImagen = "https://image.imdb.com" + rutaImagen;
@@ -76,6 +71,12 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
                 }
                 Glide.with(context)
                         .load(rutaImagen)
+                        .placeholder(R.drawable.placeholder)
+                        .into(holder.posterImageView);
+            } else {
+                // Si no hay ruta, se carga la imagen de placeholder
+                Glide.with(context)
+                        .load(R.drawable.placeholder)
                         .into(holder.posterImageView);
             }
 
@@ -101,7 +102,6 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
                     return false;
                 }
             });
-
         } else {
             Log.e("FavoritesAdapter", "Película en posición " + position + " es nula.");
         }
@@ -126,7 +126,7 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            // Se obtienen los componente3s por el id
+            // Se obtienen los componentes por su id
             tituloTextView = itemView.findViewById(R.id.txtTituloPelicula);
             anioTextView = itemView.findViewById(R.id.txtAñoPelicula);
             posterImageView = itemView.findViewById(R.id.imageViewPoster);

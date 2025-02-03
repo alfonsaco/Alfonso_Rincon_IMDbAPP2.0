@@ -29,6 +29,8 @@ public class UsuarioDAO {
 
     public long insertarUsuario(Usuario usuario) {
         ContentValues values = new ContentValues();
+        // Se inserta el UID (id) del usuario
+        values.put(UserDatabaseHelper.COLUMN_ID, usuario.getId());
         values.put(UserDatabaseHelper.COLUMN_NOMBRE, usuario.getNombre());
         values.put(UserDatabaseHelper.COLUMN_EMAIL, usuario.getEmail());
         values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN, usuario.getUltimoLogin());
@@ -96,7 +98,8 @@ public class UsuarioDAO {
                 null, null, null);
         if (cursor != null && cursor.moveToFirst()) {
             Usuario usuario = new Usuario();
-            usuario.setId(cursor.getInt(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_ID)));
+            // Recuperamos el ID (UID) como String
+            usuario.setId(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_ID)));
             usuario.setNombre(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_NOMBRE)));
             usuario.setEmail(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_EMAIL)));
             usuario.setUltimoLogin(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN)));
@@ -124,12 +127,14 @@ public class UsuarioDAO {
         return null;
     }
 
-    public long registrarLogin(String nombre, String email, String loginTime) {
+    public long registrarLogin(String nombre, String email, String loginTime, String uid) {
+        // Se espera que uid sea el Firebase UID
         Usuario usuarioExistente = obtenerUsuarioPorEmail(email);
         if (usuarioExistente != null) {
             return actualizarUltimoLogin(email, loginTime);
         } else {
             ContentValues values = new ContentValues();
+            values.put(UserDatabaseHelper.COLUMN_ID, uid);
             values.put(UserDatabaseHelper.COLUMN_NOMBRE, nombre);
             values.put(UserDatabaseHelper.COLUMN_EMAIL, email);
             values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN, loginTime);

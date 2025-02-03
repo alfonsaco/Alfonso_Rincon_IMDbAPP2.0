@@ -7,10 +7,11 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String NOMBRE_DATABASE = "favoritos.db";
+    private static final int DATABASE_VERSION = 3;
 
     // Variables estáticas para cada dato de la tabla
     public static final String NOMBRE_TABLA = "favoritos";
-    public static final String COLUMNA_ID = "_id";
+    public static final String COLUMNA_ID = "id";
     public static final String COLUMNA_ID_USUARIO = "id_usuario";
     public static final String COLUMNA_ID_PELICULA = "id_pelicula";
     public static final String COLUMNA_TITULO = "titulo";
@@ -18,7 +19,7 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMNA_CALIFICACION = "calificacion";
 
     public FavoritesDatabaseHelper(Context context) {
-        super(context, NOMBRE_DATABASE, null, 1);
+        super(context, NOMBRE_DATABASE, null, DATABASE_VERSION);
     }
 
     @Override

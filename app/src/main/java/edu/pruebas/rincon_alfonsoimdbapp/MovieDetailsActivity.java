@@ -19,7 +19,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import okhttp3.logging.HttpLoggingInterceptor;
 import com.bumptech.glide.Glide;
 
 import java.text.SimpleDateFormat;
@@ -28,13 +27,10 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import edu.pruebas.rincon_alfonsoimdbapp.api.IMDBApiService;
-import edu.pruebas.rincon_alfonsoimdbapp.api.RapidApiKeyManager;
 import edu.pruebas.rincon_alfonsoimdbapp.api.TMDBApiService;
 import edu.pruebas.rincon_alfonsoimdbapp.models.Movie;
 import edu.pruebas.rincon_alfonsoimdbapp.models.MovieDetailsResponse;
 import edu.pruebas.rincon_alfonsoimdbapp.models.MovieOverviewResponse;
-import edu.pruebas.rincon_alfonsoimdbapp.utils.Constants;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import retrofit2.Call;
@@ -56,7 +52,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
     private String movieTitle;
     private String movieRating;
 
-    // Launchers para manejar permisos y selección de contacto
+    // Launchers para permisos y selección de contacto
     private ActivityResultLauncher<String> contactPermissionLauncher;
     private ActivityResultLauncher<Intent> contactPickerLauncher;
     private ActivityResultLauncher<String> smsPermissionLauncher;
@@ -68,8 +64,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
     private TMDBApiService tmdbApiService;
     private IMDBApiService imdbApiService;
-
-    private RapidApiKeyManager rapidApiKeyManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,15 +77,19 @@ public class MovieDetailsActivity extends AppCompatActivity {
         txtRating = findViewById(R.id.txtRating);
         btnSMS = findViewById(R.id.btnSMS);
 
-        rapidApiKeyManager = RapidApiKeyManager.getInstance();
-
         // Recibimos la película con un Intent
         Intent intent = getIntent();
         Movie pelicula = intent.getParcelableExtra("pelicula");
-        String source = intent.getStringExtra("source");
-        // Se verifica que la película haya sido recibida
-        if (pelicula != null && source != null) {
-            mostrarDetallesBasicos(pelicula, source);
+        if (pelicula != null) {
+            // Usamos la lógica para determinar la API a usar:
+            // Si el id de la película empieza por "tt" se considera de IMD, de lo contrario, de TMDB.
+            if (pelicula.getId() != null && pelicula.getId().startsWith("tt")) {
+                obtenerDetallesIMD(pelicula);
+            } else {
+                obtenerDetallesTMDB(pelicula);
+            }
+
+            txtTitulo.setText(pelicula.getTitulo() != null ? pelicula.getTitulo() : "Título no disponible");
         } else {
             Toast.makeText(this, "Contenido no encontrado", Toast.LENGTH_SHORT).show();
             finish();
@@ -112,24 +110,8 @@ public class MovieDetailsActivity extends AppCompatActivity {
         });
     }
 
-    // Método para mostrar los detalles de cad apelícula
-    private void mostrarDetallesBasicos(Movie pelicula, String source) {
-        if (source.equals(Constants.SOURCE_TMDB)) {
-            obtenerDetallesTMDB(pelicula);
-        } else if (source.equals(Constants.SOURCE_IMD)) {
-            obtenerDetallesIMD(pelicula);
-        } else {
-            Toast.makeText(this, "Contenido desconocido", Toast.LENGTH_SHORT).show();
-            finish();
-        }
-
-        // Configuración básica con datos locales
-        txtTitulo.setText(pelicula.getTitulo() != null ? pelicula.getTitulo() : "Título no disponible");
-    }
-
     // Método para obtener los detalles de la película de la API de TMDB
     private void obtenerDetallesTMDB(Movie pelicula) {
-        //  Retrofit y OkHttp para TMDB
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
@@ -143,7 +125,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
         tmdbApiService = retrofit.create(TMDBApiService.class);
 
-        // Llamada a la API de TMDB para obtener detalles de la película
         Call<MovieDetailsResponse> call = tmdbApiService.obtenerDetallesPeliculas(
                 pelicula.getId(),
                 TMDB_KEY,
@@ -156,12 +137,10 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     MovieDetailsResponse detalles = response.body();
 
-                    // Asignar los datos a los TextViews
                     txtDescripcion.setText(detalles.getDescripcion() != null ? detalles.getDescripcion() : "Descripción no disponible");
                     txtRating.setText("Rating: " + detalles.getPuntuacion());
                     txtFechaSalida.setText(detalles.getFechaSalida() != null ? formatearFecha(detalles.getFechaSalida()) : "Fecha no disponible");
 
-                    // Cargar la imagen del póster
                     String posterPath = detalles.getRutaPoster();
                     if (posterPath != null && !posterPath.isEmpty()) {
                         String posterUrl = "https://image.tmdb.org/t/p/w500" + posterPath;
@@ -170,10 +149,8 @@ public class MovieDetailsActivity extends AppCompatActivity {
                                 .into(imageView);
                     }
 
-                    // Guardar el título y rating para el SMS
                     movieTitle = detalles.getTitulo();
                     movieRating = String.valueOf(detalles.getPuntuacion());
-
                 } else {
                     Log.e("MovieDetailsActivity", "Error en la respuesta de TMDB: " + response.code());
                     manejarErrorDetalles();
@@ -189,27 +166,18 @@ public class MovieDetailsActivity extends AppCompatActivity {
     }
 
     // Método para obtener los detalles de la película de la API de IMD
-    private void obtenerDetallesIMD(Movie serie) {
-        // Retrofit y OkHttp para IMD con RapidApiKeyManager
+    private void obtenerDetallesIMD(Movie pelicula) {
         OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(new Interceptor() {
-                    @Override
-                    public okhttp3.Response intercept(Chain chain) throws java.io.IOException {
-                        Request originalRequest = chain.request();
-                        String apiKey = rapidApiKeyManager.getCurrentKey();
-
-                        Request modifiedRequest = originalRequest.newBuilder()
-                                .addHeader("X-RapidAPI-Key", apiKey)
-                                .addHeader("X-RapidAPI-Host", "imdb-com.p.rapidapi.com")
-                                .build();
-                        return chain.proceed(modifiedRequest);
-                    }
+                .addInterceptor(chain -> {
+                    Request modifiedRequest = chain.request().newBuilder()
+                            .addHeader("X-RapidAPI-Key", "e11bbd55cemshd186130e9cc4907p1e01ddjsnd92900b7bab3")
+                            .addHeader("X-RapidAPI-Host", "imdb-com.p.rapidapi.com")
+                            .build();
+                    return chain.proceed(modifiedRequest);
                 })
-                .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)) // Para depuración
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .build();
-
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(IMD_BASE_URL)
@@ -219,27 +187,22 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
         imdbApiService = retrofit.create(IMDBApiService.class);
 
-        // Llamada a la API de IMD para obtener detalles de la serie o película
-        Call<MovieOverviewResponse> call = imdbApiService.obtencionDatos(serie.getId());
+        Call<MovieOverviewResponse> call = imdbApiService.obtencionDatos(pelicula.getId());
 
         call.enqueue(new Callback<MovieOverviewResponse>() {
             @Override
             public void onResponse(Call<MovieOverviewResponse> call, Response<MovieOverviewResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     MovieOverviewResponse detalles = response.body();
-
-                    // Asignar los datos a los TextViews
                     if (detalles.getData() != null && detalles.getData().getTitle() != null) {
                         MovieOverviewResponse.Title titulo = detalles.getData().getTitle();
 
-                        // Asignar descripción
                         if (titulo.getPlot() != null && titulo.getPlot().getPlotText() != null) {
                             txtDescripcion.setText(titulo.getPlot().getPlotText().getPlainText());
                         } else {
                             txtDescripcion.setText("Descripción no disponible");
                         }
 
-                        // Asignar rating
                         if (titulo.getRatingsSummary() != null) {
                             txtRating.setText("Rating: " + titulo.getRatingsSummary().getAggregateRating());
                             movieRating = String.valueOf(titulo.getRatingsSummary().getAggregateRating());
@@ -248,7 +211,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
                             movieRating = "No disponible";
                         }
 
-                        // Asignar fecha de salida
                         if (titulo.getReleaseDate() != null) {
                             String fecha = String.format("%04d-%02d-%02d",
                                     titulo.getReleaseDate().getYear(),
@@ -259,7 +221,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
                             txtFechaSalida.setText("Fecha no disponible");
                         }
 
-                        // Asignar título
                         if (titulo.getTitleText() != null) {
                             txtTitulo.setText(titulo.getTitleText().getText());
                             movieTitle = titulo.getTitleText().getText();
@@ -268,7 +229,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
                             movieTitle = "Título no disponible";
                         }
 
-                        // Cargar la imagen del póster
                         if (titulo.getPrimaryImage() != null && titulo.getPrimaryImage().getUrl() != null) {
                             String posterUrl = titulo.getPrimaryImage().getUrl();
                             if (!posterUrl.startsWith("http://") && !posterUrl.startsWith("https://")) {
@@ -278,12 +238,10 @@ public class MovieDetailsActivity extends AppCompatActivity {
                                     .load(posterUrl)
                                     .into(imageView);
                         }
-
                     } else {
                         Log.e("MovieDetailsActivity", "Datos de IMD son nulos o incompletos.");
                         manejarErrorDetalles();
                     }
-
                 } else {
                     Log.e("MovieDetailsActivity", "Error en la respuesta de IMD: " + response.code());
                     manejarErrorDetalles();
@@ -298,19 +256,11 @@ public class MovieDetailsActivity extends AppCompatActivity {
         });
     }
 
-    // Método para cambiar el contenido de los txt en caso de error
-    private void manejarErrorDetalles() {
-        txtDescripcion.setText("Error al obtener descripción");
-        txtRating.setText("Error al obtener puntuación");
-        txtFechaSalida.setText("Error al obtener fecha");
-    }
-
-    // Método para cambiar el formato de la fecha
+    // Método para formatear la fecha
     private String formatearFecha(String fecha) {
         try {
             SimpleDateFormat formatoEntrada = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             Date date = formatoEntrada.parse(fecha);
-
             SimpleDateFormat formatoSalida = new SimpleDateFormat("'Fecha de estreno:' dd 'de' MMMM 'de' yyyy", Locale.getDefault());
             return formatoSalida.format(date);
         } catch (Exception e) {
@@ -319,9 +269,15 @@ public class MovieDetailsActivity extends AppCompatActivity {
         }
     }
 
-    // Configuración de los Launchers
+    // Método para manejar errores en la obtención de detalles
+    private void manejarErrorDetalles() {
+        txtDescripcion.setText("Error al obtener descripción");
+        txtRating.setText("Error al obtener puntuación");
+        txtFechaSalida.setText("Error al obtener fecha");
+    }
+
+    // Configuración de los ActivityResultLaunchers para permisos y selección de contacto
     private void setupLaunchers() {
-        // Launcher para el permiso de contactos
         contactPermissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestPermission(), isGranted -> {
                     if (isGranted) {
@@ -329,9 +285,9 @@ public class MovieDetailsActivity extends AppCompatActivity {
                     } else {
                         Toast.makeText(this, "Permiso para acceder a contactos denegado", Toast.LENGTH_SHORT).show();
                     }
-                });
+                }
+        );
 
-        // Launcher para seleccionar un contacto
         contactPickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -343,8 +299,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
                             if (cursor != null && cursor.moveToFirst()) {
                                 int column = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
                                 selectedContactNumber = cursor.getString(column);
-
-                                // Pedir permiso para enviar SMS
                                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
                                     enviarSMS();
                                 } else {
@@ -353,9 +307,9 @@ public class MovieDetailsActivity extends AppCompatActivity {
                             }
                         }
                     }
-                });
+                }
+        );
 
-        // Launcher para el permiso de SMS
         smsPermissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestPermission(),
                 isGranted -> {
@@ -364,16 +318,17 @@ public class MovieDetailsActivity extends AppCompatActivity {
                     } else {
                         Toast.makeText(this, "Permiso para enviar SMS denegado", Toast.LENGTH_SHORT).show();
                     }
-                });
+                }
+        );
     }
 
-    // Intent para seleccionar un contacto al cual enviarle el SMS
+    // Método para iniciar la selección de contacto
     private void seleccionarContacto() {
         Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
         contactPickerLauncher.launch(intent);
     }
 
-    // Función de enviar el SMS con la información en cuestión
+    // Método para enviar SMS con la información de la película
     private void enviarSMS() {
         if (selectedContactNumber != null) {
             String smsBody = "Este contenido te gustará: " + movieTitle + ", Rating: " + movieRating;
