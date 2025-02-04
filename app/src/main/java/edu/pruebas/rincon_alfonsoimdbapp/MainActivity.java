@@ -42,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
     private UsuarioDAO usuarioDAO;
     private UsersSync usersSync;
 
+    ImageView imageView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         View headerView = navigationView.getHeaderView(0);
         TextView nombreTextView = headerView.findViewById(R.id.nombreEmail);
         TextView emailTextView = headerView.findViewById(R.id.email);
-        ImageView imageView = headerView.findViewById(R.id.imagenEmail);
+        imageView = headerView.findViewById(R.id.imagenEmail);
 
         String nombreUsuario = getIntent().getStringExtra("nombre");
         String emailUsuario = getIntent().getStringExtra("email");
@@ -137,16 +139,21 @@ public class MainActivity extends AppCompatActivity {
                 usuarioDAO.actualizarUltimoLogin(currentUser.getEmail(), timestamp);
                 Log.d("MainActivity", "UltimoLogin actualizado para: " + currentUser.getEmail());
                 // Actualización del header, etc.
+                String imagenUsuario = usuario.getImagen();
+                if (imagenUsuario != null && !imagenUsuario.isEmpty()) {
+                    Glide.with(this).load(imagenUsuario).into(imageView);
+                }
+
             } else {
                 // Usamos el UID de Firebase en el constructor
                 Usuario nuevoUsuario = new Usuario(
-                        currentUser.getUid(),  // UID de Firebase
+                        currentUser.getUid(),
                         currentUser.getDisplayName(),
                         currentUser.getEmail(),
                         timestamp,
-                        "", // Último Logout vacío
-                        "", // Dirección vacía
-                        "", // Teléfono vacío
+                        "",
+                        "",
+                        "",
                         currentUser.getPhotoUrl() != null ? currentUser.getPhotoUrl().toString() : ""
                 );
                 usuarioDAO.insertarUsuario(nuevoUsuario);
