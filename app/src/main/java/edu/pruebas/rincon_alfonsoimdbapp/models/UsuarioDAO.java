@@ -19,14 +19,17 @@ public class UsuarioDAO {
         dbHelper = new UserDatabaseHelper(context);
     }
 
+    // Abrir la base de datos en modo escritura
     public void open() {
         database = dbHelper.getWritableDatabase();
     }
 
+    // Cerrar la base de datos
     public void close() {
         dbHelper.close();
     }
 
+    // Insertar un nuevo usuario en la base de datos
     public long insertarUsuario(Usuario usuario) {
         ContentValues values = new ContentValues();
         values.put(UserDatabaseHelper.COLUMN_ID, usuario.getId());
@@ -34,26 +37,13 @@ public class UsuarioDAO {
         values.put(UserDatabaseHelper.COLUMN_EMAIL, usuario.getEmail());
         values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN, usuario.getUltimoLogin());
         values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGOUT, usuario.getUltimoLogout());
-
-        try {
-            KeystoreManager km = new KeystoreManager();
-            String encryptedDireccion = (usuario.getDireccion() != null && !usuario.getDireccion().isEmpty())
-                    ? km.encrypt(usuario.getDireccion()) : "";
-            String encryptedTelefono = (usuario.getTelefono() != null && !usuario.getTelefono().isEmpty())
-                    ? km.encrypt(usuario.getTelefono()) : "";
-            values.put(UserDatabaseHelper.COLUMN_DIRECCION, encryptedDireccion);
-            values.put(UserDatabaseHelper.COLUMN_TELEFONO, encryptedTelefono);
-        } catch (Exception e) {
-            Log.e(TAG, "Error cifrando datos en insertarUsuario: " + e.getMessage());
-            e.printStackTrace();
-            values.put(UserDatabaseHelper.COLUMN_DIRECCION, "");
-            values.put(UserDatabaseHelper.COLUMN_TELEFONO, "");
-        }
+        values.put(UserDatabaseHelper.COLUMN_DIRECCION, usuario.getDireccion());
+        values.put(UserDatabaseHelper.COLUMN_TELEFONO, usuario.getTelefono());
         values.put(UserDatabaseHelper.COLUMN_IMAGEN, usuario.getImagen());
         return database.insert(UserDatabaseHelper.TABLE_USUARIOS, null, values);
     }
 
-
+    // Actualizar el último login de un usuario
     public int actualizarUltimoLogin(String email, String ultimoLogin) {
         ContentValues values = new ContentValues();
         values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN, ultimoLogin);
@@ -61,6 +51,7 @@ public class UsuarioDAO {
                 UserDatabaseHelper.COLUMN_EMAIL + " = ?", new String[]{email});
     }
 
+    // Actualizar el último logout de un usuario
     public int actualizarUltimoLogout(String email, String ultimoLogout) {
         ContentValues values = new ContentValues();
         values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGOUT, ultimoLogout);
@@ -68,6 +59,7 @@ public class UsuarioDAO {
                 UserDatabaseHelper.COLUMN_EMAIL + " = ?", new String[]{email});
     }
 
+    // Actualizar la dirección, teléfono y la imagen del usuario
     public int actualizarDatosUsuario(String email, String direccion, String telefono, String imagen) {
         ContentValues values = new ContentValues();
         try {
@@ -89,6 +81,7 @@ public class UsuarioDAO {
                 UserDatabaseHelper.COLUMN_EMAIL + " = ?", new String[]{email});
     }
 
+    // Obtener un usuario a partir de su email
     public Usuario obtenerUsuarioPorEmail(String email) {
         Cursor cursor = database.query(UserDatabaseHelper.TABLE_USUARIOS,
                 null,
@@ -97,37 +90,49 @@ public class UsuarioDAO {
                 null, null, null);
         if (cursor != null && cursor.moveToFirst()) {
             Usuario usuario = new Usuario();
-            // Recuperamos el ID (UID) como String
             usuario.setId(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_ID)));
             usuario.setNombre(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_NOMBRE)));
             usuario.setEmail(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_EMAIL)));
             usuario.setUltimoLogin(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN)));
             usuario.setUltimoLogout(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_ULTIMO_LOGOUT)));
-            String encryptedDireccion = cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_DIRECCION));
-            String encryptedTelefono = cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_TELEFONO));
+            usuario.setDireccion(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_DIRECCION)));
+            usuario.setTelefono(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_TELEFONO)));
             usuario.setImagen(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_IMAGEN)));
-            try {
-                KeystoreManager km = new KeystoreManager();
-                String direccion = (encryptedDireccion != null && !encryptedDireccion.isEmpty()) ? km.decrypt(encryptedDireccion) : "";
-                String telefono = (encryptedTelefono != null && !encryptedTelefono.isEmpty()) ? km.decrypt(encryptedTelefono) : "";
-                usuario.setDireccion(direccion);
-                usuario.setTelefono(telefono);
-                Log.d(TAG, "ObtenerUsuario - Dirección descifrada: " + direccion);
-                Log.d(TAG, "ObtenerUsuario - Teléfono descifrado: " + telefono);
-            } catch (Exception e) {
-                Log.e(TAG, "Error descifrando datos en obtenerUsuarioPorEmail: " + e.getMessage());
-                e.printStackTrace();
-                usuario.setDireccion("");
-                usuario.setTelefono("");
-            }
             cursor.close();
             return usuario;
         }
         return null;
     }
 
+    // Obtener todos los usuarios de la base de datos
+    public Cursor obtenerTodosUsuarios() {
+        return database.query(UserDatabaseHelper.TABLE_USUARIOS,
+                null,
+                null, null, null, null, null);
+    }
+
+    // Eliminar un usuario a partir de su email
+    public int eliminarUsuario(String email) {
+        return database.delete(UserDatabaseHelper.TABLE_USUARIOS,
+                UserDatabaseHelper.COLUMN_EMAIL + " = ?", new String[]{email});
+    }
+
+    // Verificar si existe un usuario por email
+    public boolean existeUsuarioPorEmail(String email) {
+        Cursor cursor = database.query(UserDatabaseHelper.TABLE_USUARIOS,
+                null,
+                UserDatabaseHelper.COLUMN_EMAIL + " = ?",
+                new String[]{email},
+                null, null, null);
+        boolean exists = (cursor != null && cursor.moveToFirst());
+        if (cursor != null) {
+            cursor.close();
+        }
+        return exists;
+    }
+
+    // Registrar un login si el usuario no existe o actualizar su login si ya existe
     public long registrarLogin(String nombre, String email, String loginTime, String uid) {
-        // Se espera que uid sea el Firebase UID
         Usuario usuarioExistente = obtenerUsuarioPorEmail(email);
         if (usuarioExistente != null) {
             return actualizarUltimoLogin(email, loginTime);
@@ -143,10 +148,5 @@ public class UsuarioDAO {
             values.put(UserDatabaseHelper.COLUMN_IMAGEN, "");
             return database.insert(UserDatabaseHelper.TABLE_USUARIOS, null, values);
         }
-    }
-
-    public int eliminarUsuario(String email) {
-        return database.delete(UserDatabaseHelper.TABLE_USUARIOS,
-                UserDatabaseHelper.COLUMN_EMAIL + " = ?", new String[]{email});
     }
 }

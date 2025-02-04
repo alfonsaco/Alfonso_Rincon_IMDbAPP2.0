@@ -31,6 +31,7 @@ import androidx.navigation.ui.NavigationUI;
 import edu.pruebas.rincon_alfonsoimdbapp.databinding.ActivityMainBinding;
 import edu.pruebas.rincon_alfonsoimdbapp.models.Usuario;
 import edu.pruebas.rincon_alfonsoimdbapp.models.UsuarioDAO;
+import edu.pruebas.rincon_alfonsoimdbapp.sync.UsersSync;
 import edu.pruebas.rincon_alfonsoimdbapp.utils.DateTimeUtils;
 
 public class MainActivity extends AppCompatActivity {
@@ -39,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private GoogleSignInClient googleSignInClient;
     private UsuarioDAO usuarioDAO;
+    private UsersSync usersSync;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
         usuarioDAO = new UsuarioDAO(this);
         usuarioDAO.open();
+        usersSync = new UsersSync(usuarioDAO);
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -127,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
+            usersSync.syncUserLogin(currentUser);
             String timestamp = DateTimeUtils.getCurrentTimestamp();
             Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(currentUser.getEmail());
             if (usuario != null) {
@@ -158,6 +162,8 @@ public class MainActivity extends AppCompatActivity {
         super.onStop();
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
+            usersSync.syncUserLogout(currentUser);
+
             String timestamp = DateTimeUtils.getCurrentTimestamp();
             Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(currentUser.getEmail());
             if (usuario != null) {
