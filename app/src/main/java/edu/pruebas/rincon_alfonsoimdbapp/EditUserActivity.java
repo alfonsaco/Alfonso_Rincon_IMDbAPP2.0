@@ -32,6 +32,7 @@ import java.util.Locale;
 
 import edu.pruebas.rincon_alfonsoimdbapp.models.Usuario;
 import edu.pruebas.rincon_alfonsoimdbapp.models.UsuarioDAO;
+import edu.pruebas.rincon_alfonsoimdbapp.sync.UsersSync;
 
 public class EditUserActivity extends AppCompatActivity {
 
@@ -54,6 +55,7 @@ public class EditUserActivity extends AppCompatActivity {
 
     private UsuarioDAO usuarioDAO;
     private String userEmail; // se usa como clave
+    private UsersSync usersSync; // Se usa para sincronizar con Firebase
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +75,7 @@ public class EditUserActivity extends AppCompatActivity {
 
         usuarioDAO = new UsuarioDAO(this);
         usuarioDAO.open();
+        usersSync = new UsersSync(usuarioDAO);
 
         // Recibir datos de MainActivity
         String nombre = getIntent().getStringExtra("nombre");
@@ -151,12 +154,17 @@ public class EditUserActivity extends AppCompatActivity {
                 Toast.makeText(this, "Número de teléfono inválido", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            // Actualizar los datos en la base de datos local (SQLite)
             int updated = usuarioDAO.actualizarDatosUsuario(userEmail, direccion, fullPhone, selectedImageUri);
             if (updated > 0) {
+                // Sincronizar con Firebase
+                usersSync.syncUserDataToFirebase(userEmail, direccion, fullPhone);
                 Toast.makeText(EditUserActivity.this, "Datos actualizados", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(EditUserActivity.this, "Error al actualizar datos", Toast.LENGTH_SHORT).show();
             }
+
             Intent resultIntent = new Intent();
             resultIntent.putExtra("imagen", selectedImageUri);
             setResult(Activity.RESULT_OK, resultIntent);

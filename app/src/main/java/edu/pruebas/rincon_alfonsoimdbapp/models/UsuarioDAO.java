@@ -95,8 +95,20 @@ public class UsuarioDAO {
             usuario.setEmail(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_EMAIL)));
             usuario.setUltimoLogin(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN)));
             usuario.setUltimoLogout(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_ULTIMO_LOGOUT)));
-            usuario.setDireccion(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_DIRECCION)));
-            usuario.setTelefono(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_TELEFONO)));
+
+            // Desencriptar los campos de dirección y teléfono
+            try {
+                KeystoreManager km = new KeystoreManager();
+                String direccion = cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_DIRECCION));
+                String telefono = cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_TELEFONO));
+                usuario.setDireccion(direccion != null ? km.decrypt(direccion) : "");
+                usuario.setTelefono(telefono != null ? km.decrypt(telefono) : "");
+            } catch (Exception e) {
+                Log.e(TAG, "Error descifrando datos: " + e.getMessage());
+                usuario.setDireccion("");
+                usuario.setTelefono("");
+            }
+
             usuario.setImagen(cursor.getString(cursor.getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_IMAGEN)));
             cursor.close();
             return usuario;
@@ -104,49 +116,4 @@ public class UsuarioDAO {
         return null;
     }
 
-    // Obtener todos los usuarios de la base de datos
-    public Cursor obtenerTodosUsuarios() {
-        return database.query(UserDatabaseHelper.TABLE_USUARIOS,
-                null,
-                null, null, null, null, null);
-    }
-
-    // Eliminar un usuario a partir de su email
-    public int eliminarUsuario(String email) {
-        return database.delete(UserDatabaseHelper.TABLE_USUARIOS,
-                UserDatabaseHelper.COLUMN_EMAIL + " = ?", new String[]{email});
-    }
-
-    // Verificar si existe un usuario por email
-    public boolean existeUsuarioPorEmail(String email) {
-        Cursor cursor = database.query(UserDatabaseHelper.TABLE_USUARIOS,
-                null,
-                UserDatabaseHelper.COLUMN_EMAIL + " = ?",
-                new String[]{email},
-                null, null, null);
-        boolean exists = (cursor != null && cursor.moveToFirst());
-        if (cursor != null) {
-            cursor.close();
-        }
-        return exists;
-    }
-
-    // Registrar un login si el usuario no existe o actualizar su login si ya existe
-    public long registrarLogin(String nombre, String email, String loginTime, String uid) {
-        Usuario usuarioExistente = obtenerUsuarioPorEmail(email);
-        if (usuarioExistente != null) {
-            return actualizarUltimoLogin(email, loginTime);
-        } else {
-            ContentValues values = new ContentValues();
-            values.put(UserDatabaseHelper.COLUMN_ID, uid);
-            values.put(UserDatabaseHelper.COLUMN_NOMBRE, nombre);
-            values.put(UserDatabaseHelper.COLUMN_EMAIL, email);
-            values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGIN, loginTime);
-            values.put(UserDatabaseHelper.COLUMN_ULTIMO_LOGOUT, "");
-            values.put(UserDatabaseHelper.COLUMN_DIRECCION, "");
-            values.put(UserDatabaseHelper.COLUMN_TELEFONO, "");
-            values.put(UserDatabaseHelper.COLUMN_IMAGEN, "");
-            return database.insert(UserDatabaseHelper.TABLE_USUARIOS, null, values);
-        }
-    }
 }

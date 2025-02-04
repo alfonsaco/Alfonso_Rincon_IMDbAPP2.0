@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String NOMBRE_DATABASE = "favoritos.db";
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 4;
 
     // Variables estáticas para cada dato de la tabla
     public static final String NOMBRE_TABLA = "favoritos";

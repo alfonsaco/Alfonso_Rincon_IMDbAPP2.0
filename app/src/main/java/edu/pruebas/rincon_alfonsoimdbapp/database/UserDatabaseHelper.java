@@ -8,7 +8,7 @@ import android.util.Log;
 public class UserDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "users.db";
-    private static final int DATABASE_VERSION = 8;
+    private static final int DATABASE_VERSION = 9;
 
     public static final String TABLE_USUARIOS = "Usuarios";
     public static final String COLUMN_ID = "ID";

@@ -11,7 +11,7 @@
         android:id="@+id/etxtNombreCambio"
         android:layout_width="306dp"
         android:layout_height="48dp"
-        android:layout_marginTop="55dp"
+        android:layout_marginTop="14dp"
         android:ems="10"
         android:hint="Nombre"
         android:inputType="text"

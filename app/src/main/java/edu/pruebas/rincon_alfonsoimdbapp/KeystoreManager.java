@@ -49,7 +49,7 @@ public class KeystoreManager {
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
         // Inicializamos sin proporcionar un IV, para que la infraestructura genere uno aleatorio
         cipher.init(Cipher.ENCRYPT_MODE, key);
-        byte[] iv = cipher.getIV(); // Obtenemos el IV generado
+        byte[] iv = cipher.getIV();
 
         byte[] cipherText = cipher.doFinal(plainText.getBytes("UTF-8"));
 
