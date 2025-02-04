@@ -9,6 +9,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.gson.Gson;
 
 import java.io.IOException;
@@ -46,8 +48,15 @@ public class MovieListActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         // Inicializar el adaptador con una lista vacía y asignarlo al RecyclerView
-        movieAdapter = new MovieAdapter(this, new ArrayList<>(), Constants.SOURCE_TMDB);
-        recyclerView.setAdapter(movieAdapter);
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String userId = (currentUser != null) ? currentUser.getUid() : null;  // Obtener el ID del usuario
+
+        if (userId != null) {
+            movieAdapter = new MovieAdapter(this, new ArrayList<>(), Constants.SOURCE_TMDB, userId);
+            recyclerView.setAdapter(movieAdapter);
+        } else {
+            Toast.makeText(this, "Usuario no autenticado", Toast.LENGTH_SHORT).show();
+        }
 
         // OkHttpClient y Gson
         client = new OkHttpClient.Builder()

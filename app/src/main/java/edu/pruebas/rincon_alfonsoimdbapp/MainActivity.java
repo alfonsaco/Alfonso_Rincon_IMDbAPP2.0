@@ -8,6 +8,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+
+import com.google.firebase.FirebaseApp;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -29,6 +31,7 @@ import androidx.navigation.ui.NavigationUI;
 import edu.pruebas.rincon_alfonsoimdbapp.databinding.ActivityMainBinding;
 import edu.pruebas.rincon_alfonsoimdbapp.models.Usuario;
 import edu.pruebas.rincon_alfonsoimdbapp.models.UsuarioDAO;
+import edu.pruebas.rincon_alfonsoimdbapp.sync.UsersSync;
 import edu.pruebas.rincon_alfonsoimdbapp.utils.DateTimeUtils;
 
 public class MainActivity extends AppCompatActivity {
@@ -37,12 +40,20 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private GoogleSignInClient googleSignInClient;
     private UsuarioDAO usuarioDAO;
+    private UsersSync usersSync;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Inicializar Firebase (esto es redundante si ya tienes el archivo google-services.json)
+        if (FirebaseApp.getApps(this).isEmpty()) {
+            FirebaseApp.initializeApp(this);
+        }
+
         usuarioDAO = new UsuarioDAO(this);
         usuarioDAO.open();
+        usersSync = new UsersSync(usuarioDAO);
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -101,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navigationView, navController);
     }
 
+
     private void actualizarUltimoLogout(String email) {
         String timestamp = DateTimeUtils.getCurrentTimestamp();
         Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(email);
@@ -112,31 +124,29 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Dentro de MainActivity.java, en onStart()
     @Override
     protected void onStart() {
         super.onStart();
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
+            usersSync.syncUserLogin(currentUser);
             String timestamp = DateTimeUtils.getCurrentTimestamp();
             Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(currentUser.getEmail());
             if (usuario != null) {
                 usuarioDAO.actualizarUltimoLogin(currentUser.getEmail(), timestamp);
                 Log.d("MainActivity", "UltimoLogin actualizado para: " + currentUser.getEmail());
-                NavigationView navigationView = binding.navView;
-                View headerView = navigationView.getHeaderView(0);
-                ImageView imageView = headerView.findViewById(R.id.imagenEmail);
-                String imagenFromDB = usuario.getImagen();
-                if (imagenFromDB != null && !imagenFromDB.isEmpty()) {
-                    Glide.with(this).load(imagenFromDB).into(imageView);
-                }
+                // Actualización del header, etc.
             } else {
+                // Usamos el UID de Firebase en el constructor
                 Usuario nuevoUsuario = new Usuario(
+                        currentUser.getUid(),  // UID de Firebase
                         currentUser.getDisplayName(),
                         currentUser.getEmail(),
                         timestamp,
-                        "",
-                        "",  // Dirección vacía
-                        "",  // Teléfono vacío
+                        "", // Último Logout vacío
+                        "", // Dirección vacía
+                        "", // Teléfono vacío
                         currentUser.getPhotoUrl() != null ? currentUser.getPhotoUrl().toString() : ""
                 );
                 usuarioDAO.insertarUsuario(nuevoUsuario);
@@ -145,11 +155,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+
     @Override
     protected void onStop() {
         super.onStop();
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
+            usersSync.syncUserLogout(currentUser);
+
             String timestamp = DateTimeUtils.getCurrentTimestamp();
             Usuario usuario = usuarioDAO.obtenerUsuarioPorEmail(currentUser.getEmail());
             if (usuario != null) {

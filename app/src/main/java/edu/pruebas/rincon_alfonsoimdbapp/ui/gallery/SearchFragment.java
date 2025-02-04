@@ -92,7 +92,6 @@ public class SearchFragment extends Fragment {
         return view;
     }
 
-    // Método para poder verifiar lo spermisos Bluetooth
     private void verificarYPedirPermisos() {
         List<String> permisosNecesarios = new ArrayList<>();
 
@@ -119,10 +118,8 @@ public class SearchFragment extends Fragment {
         }
     }
 
-    // Método para mostra rel JSOn tras haber aceptado los permisos
     private void mostrarDialogoJSON() {
         List<Movie> favorites = favoritesManager.obtenerFavoritas(idUsuario);
-        // Debe haber películas para poder mostrarlo
         if (favorites.isEmpty()) {
             Toast.makeText(requireContext(), "No tienes películas favoritas", Toast.LENGTH_SHORT).show();
             return;
@@ -142,17 +139,17 @@ public class SearchFragment extends Fragment {
                 .show();
     }
 
-    // Se cargan las películas favoritaas en el Fragment
+    // Cargar las películas favoritas en el Fragment
     private void cargarFavoritas() {
         List<Movie> peliculasFavoritas = favoritesManager.obtenerFavoritas(idUsuario);
         if (peliculasFavoritas.isEmpty()) {
-            Toast.makeText(requireContext(), "No hay películas favoritas.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "No tienes películas favoritas.", Toast.LENGTH_SHORT).show();
         } else {
             Log.d("SearchFragment", "Películas favoritas cargadas.");
         }
 
         if (adapter == null) {
-            adapter = new FavoritesAdapter(requireContext(), peliculasFavoritas, movie -> {
+            adapter = new FavoritesAdapter(requireContext(), peliculasFavoritas, idUsuario, movie -> {
                 favoritesManager.borrarFavorita(idUsuario, movie.getId());
                 cargarFavoritas();
             }, Constants.SOURCE_IMD);

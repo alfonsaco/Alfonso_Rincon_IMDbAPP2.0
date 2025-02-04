@@ -13,6 +13,9 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,7 +46,19 @@ public class Top10Fragment extends Fragment {
         // Configurar RecyclerView
         recyclerView = view.findViewById(R.id.recyclerViewTopMovies);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
-        adapter = new MovieAdapter(getContext(), listaPeliculas, Constants.SOURCE_IMD);
+
+        // Obtener el userId desde Firebase
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String userId = (currentUser != null) ? currentUser.getUid() : null;
+
+        // Verificar que el userId no sea nulo y asignar el adaptador
+        if (userId != null) {
+            adapter = new MovieAdapter(getContext(), listaPeliculas, Constants.SOURCE_IMD, userId);
+        } else {
+            // Si no hay un usuario autenticado, maneja el caso (puedes mostrar un mensaje de advertencia, etc.)
+            Toast.makeText(getContext(), "Usuario no autenticado", Toast.LENGTH_SHORT).show();
+        }
+
         recyclerView.setAdapter(adapter);
 
         // Llamada al método que obtiene los datos de la API

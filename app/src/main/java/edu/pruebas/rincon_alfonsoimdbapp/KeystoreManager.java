@@ -15,7 +15,7 @@ public class KeystoreManager {
     private static final String ANDROID_KEYSTORE = "AndroidKeyStore";
     private static final String KEY_ALIAS = "MyKeyAlias";
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
-    private static final int TAG_LENGTH = 128; // en bits
+    private static final int TAG_LENGTH = 128;
 
     public KeystoreManager() throws Exception {
         createKeyIfNeeded();
