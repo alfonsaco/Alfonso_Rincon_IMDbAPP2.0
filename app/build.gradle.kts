@@ -69,4 +69,6 @@ dependencies {
     implementation("com.google.android.libraries.places:places:2.7.0")
     implementation("com.hbb20:ccp:2.5.4")
 
+    implementation ("com.googlecode.libphonenumber:libphonenumber:8.13.14")
+
 }

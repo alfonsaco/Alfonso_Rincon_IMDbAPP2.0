@@ -34,6 +34,10 @@ import edu.pruebas.rincon_alfonsoimdbapp.models.Usuario;
 import edu.pruebas.rincon_alfonsoimdbapp.models.UsuarioDAO;
 import edu.pruebas.rincon_alfonsoimdbapp.sync.UsersSync;
 
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber;
+
 public class EditUserActivity extends AppCompatActivity {
 
     private EditText etxtNombreCambio;
@@ -149,13 +153,15 @@ public class EditUserActivity extends AppCompatActivity {
         btnGuardarCambios.setOnClickListener(v -> {
             String direccion = etxtDireccionNueva.getText().toString().trim();
             String telefono = editTextPhone.getText().toString().trim();
+            // Combinar el prefijo y el número ingresado
             String fullPhone = countryCodePicker.getSelectedCountryCodeWithPlus() + telefono;
+            // Validar utilizando libphonenumber
             if (!isValidPhoneNumber(fullPhone, countryCodePicker.getSelectedCountryNameCode())) {
                 Toast.makeText(this, "Número de teléfono inválido", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Actualizar los datos en la base de datos local (SQLite)
+            // Actualizar datos en la base de datos local (SQLite)
             int updated = usuarioDAO.actualizarDatosUsuario(userEmail, direccion, fullPhone, selectedImageUri);
             if (updated > 0) {
                 // Sincronizar con Firebase
@@ -170,6 +176,7 @@ public class EditUserActivity extends AppCompatActivity {
             setResult(Activity.RESULT_OK, resultIntent);
             finish();
         });
+
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -206,9 +213,18 @@ public class EditUserActivity extends AppCompatActivity {
         return FileProvider.getUriForFile(this, "edu.pruebas.rincon_alfonsoimdbapp.fileprovider", imageFile);
     }
 
-    private boolean isValidPhoneNumber(String fullPhone, String countryCode) {
-        String digits = fullPhone.replaceAll("\\D+", "");
-        return digits.length() >= 10;
+    private boolean isValidPhoneNumber(String phoneNumber, String countryCode) {
+        PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
+        try {
+            // Parseamos el número usando el código del país
+            PhoneNumber numberProto = phoneUtil.parse(phoneNumber, countryCode);
+            return phoneUtil.isValidNumberForRegion(numberProto, countryCode);
+
+        } catch (NumberParseException e) {
+            // Para evitar números demasiado grandes
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
