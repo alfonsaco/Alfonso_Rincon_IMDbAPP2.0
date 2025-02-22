@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+
         // Inicializar Firebase (esto es redundante si ya tienes el archivo google-services.json)
         if (FirebaseApp.getApps(this).isEmpty()) {
             FirebaseApp.initializeApp(this);
@@ -93,21 +94,26 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnLogOut = headerView.findViewById(R.id.btnLogOut);
         btnLogOut.setOnClickListener(v -> {
+            // Guardar el usuario actual en una variable local
             FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
             if (currentUser != null) {
+                // Sincroniza el logout y actualiza la base local
+                usersSync.syncUserLogout(currentUser);
                 actualizarUltimoLogout(currentUser.getEmail());
-                FirebaseAuth.getInstance().signOut();
-                googleSignInClient.signOut().addOnCompleteListener(task -> {
-                    LoginManager.getInstance().logOut();
-                    Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
-                });
-            } else {
-                Log.e("MainActivity", "No hay usuario actual para cerrar sesión");
             }
+
+            // Cerrar sesión en Firebase y en los SDK de terceros
+            FirebaseAuth.getInstance().signOut();
+            LoginManager.getInstance().logOut(); // Para Facebook
+            googleSignInClient.signOut().addOnCompleteListener(task -> {
+                // Redirigir a la pantalla de login una vez cerrada la sesión
+                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+            });
         });
+
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);

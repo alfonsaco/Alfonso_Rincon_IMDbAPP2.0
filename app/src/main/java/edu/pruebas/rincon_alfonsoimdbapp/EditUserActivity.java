@@ -180,19 +180,17 @@ public class EditUserActivity extends AppCompatActivity {
         btnGuardarCambios.setOnClickListener(v -> {
             String direccion = etxtDireccionNueva.getText().toString().trim();
             String telefono = editTextPhone.getText().toString().trim();
-            // Combinar el prefijo y el número ingresado
             String fullPhone = countryCodePicker.getSelectedCountryCodeWithPlus() + telefono;
-            // Validar utilizando libphonenumber
+
             if (!isValidPhoneNumber(fullPhone, countryCodePicker.getSelectedCountryNameCode())) {
                 Toast.makeText(this, "Número de teléfono inválido", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Actualizar datos en la base de datos local (SQLite)
             int updated = usuarioDAO.actualizarDatosUsuario(userEmail, direccion, fullPhone, selectedImageUri);
             if (updated > 0) {
-                // Sincronizar con Firebase
-                usersSync.syncUserDataToFirebase(userEmail, direccion, fullPhone);
+                // Se incluye el parámetro "selectedImageUri" para la imagen
+                usersSync.syncUserDataToFirebase(userEmail, direccion, fullPhone, selectedImageUri);
                 Toast.makeText(EditUserActivity.this, "Datos actualizados", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(EditUserActivity.this, "Error al actualizar datos", Toast.LENGTH_SHORT).show();
@@ -203,6 +201,7 @@ public class EditUserActivity extends AppCompatActivity {
             setResult(Activity.RESULT_OK, resultIntent);
             finish();
         });
+
 
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
